@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Manoel Pedra — Painel Administrativo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@700&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  body { margin:0; font-family:'Inter',ui-sans-serif,system-ui,sans-serif; background:#f9fafb; color:#1f2937; }
+  .mono { font-family:'JetBrains Mono',monospace; }
+  .btn-primary { background:#ffbf00; color:#000; font-family:'Montserrat',sans-serif; font-weight:700; }
+  .btn-primary:hover { filter:brightness(0.95); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="./shared.js"></script>
+<script type="text/babel" data-presets="react">
+
+function TelaLogin({ onEntrar }) {
+  const [senha, setSenha] = React.useState("");
+  function tentar() {
+    if (senha === Store.getSenha()) onEntrar();
+    else alert("Senha incorreta");
+  }
+  return (
+    <div className="mx-auto max-w-[400px]">
+      <div className="rounded-[20px] bg-white border border-zinc-200 shadow-sm p-6 sm:p-8">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="h-10 w-10 rounded-xl bg-zinc-900 text-white flex items-center justify-center">
+            <Icon path={ICONS.key} className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="font-bold">Acesso Administrativo</div>
+            <div className="text-[11px] text-zinc-500">Manoel Pedra — Painel</div>
+          </div>
+        </div>
+        <label className="text-[11px] font-semibold uppercase tracking-widest text-zinc-500">Senha</label>
+        <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && tentar()}
+          className="mt-1.5 w-full h-[44px] rounded-xl border border-zinc-200 px-4 text-[14px] outline-none focus:border-zinc-900"
+          placeholder="Digite a senha" />
+        <button onClick={tentar} className="mt-4 w-full h-[44px] rounded-xl bg-zinc-900 text-white font-semibold text-[14px] hover:bg-black">
+          Entrar no painel
+        </button>
+        <a href="./index.html" className="mt-3 w-full h-[40px] rounded-xl border border-zinc-200 text-[13px] font-medium flex items-center justify-center no-underline text-zinc-900">
+          Voltar para o site do cliente
+        </a>
+      </div>
+    </div>
+  );
+}
+
+function AbaGerar() {
+  const [empresa, setEmpresa] = React.useState("");
+  const [gerado, setGerado] = React.useState("");
+
+  function gerar() {
+    const codigo = gerarCodigo();
+    const codigos = Store.getCodigos();
+    Store.setCodigos([{ codigo, empresa: empresa.trim() || undefined, data: new Date().toISOString(), status: "disponivel" }, ...codigos]);
+    setGerado(codigo);
+    setEmpresa("");
+  }
+
+  async function copiar(texto) {
+    try { await navigator.clipboard.writeText(texto); } catch {}
+  }
+
+  return (
+    <div className="max-w-[560px]">
+      <h3 className="font-semibold">Gerar novo código de acesso</h3>
+      <p className="text-[12px] text-zinc-500 mt-1">Cada código é único e de uso único.</p>
+      <div className="mt-4">
+        <label className="text-[11px] font-semibold uppercase tracking-widest text-zinc-500">Empresa (opcional)</label>
+        <input value={empresa} onChange={(e) => setEmpresa(e.target.value)} placeholder="Ex: CONSTRUTORA ALFA LTDA"
+          className="mt-1.5 w-full h-[42px] rounded-xl border border-zinc-200 px-3.5 text-[14px] outline-none focus:border-zinc-900" />
+      </div>
+      <button onClick={gerar} className="btn-primary mt-3 h-[42px] px-5 rounded-xl">Gerar MP-XXXX aleatório</button>
+
+      {gerado && (
+        <div className="mt-6 rounded-xl bg-zinc-900 text-white p-5">
+          <div className="text-[11px] uppercase tracking-widest text-zinc-400">Código gerado</div>
+          <div className="mono text-[32px] font-bold tracking-widest mt-1">{gerado}</div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button onClick={() => copiar(gerado)} className="h-9 px-3 rounded-full bg-white text-zinc-900 text-[12px] font-semibold flex items-center gap-1.5">
+              <Icon path={ICONS.copy} className="h-3.5 w-3.5" /> Copiar
+            </button>
+            <button
+              onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(`Olá, seu código para preencher a ficha de qualificação é ${gerado} - Acesse ${FICHA_URL}`)}`, "_blank")}
+              className="h-9 px-3 rounded-full bg-[#25D366] text-white text-[12px] font-semibold flex items-center gap-1.5">
+              <Icon path={ICONS.message} className="h-3.5 w-3.5" /> Enviar por WhatsApp para cliente
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AbaLista() {
+  const [codigos, setCodigos] = React.useState(Store.getCodigos());
+
+  function salvar(novos) { setCodigos(novos); Store.setCodigos(novos); }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold">Códigos Gerados ({codigos.length})</h3>
+        <button onClick={() => { if (confirm("Excluir todos os códigos?")) salvar([]); }} className="text-[11px] text-red-600 hover:underline">Limpar tudo</button>
+      </div>
+      <div className="mt-4 overflow-auto rounded-xl border border-zinc-200">
+        <table className="w-full text-[12px]">
+          <thead className="bg-zinc-50 text-[11px] uppercase tracking-widest text-zinc-500">
+            <tr>
+              <th className="text-left p-2.5">Código</th><th className="text-left p-2.5">Empresa</th>
+              <th className="text-left p-2.5">Data</th><th className="text-left p-2.5">Status</th>
+              <th className="text-right p-2.5">Ação</th>
+            </tr>
+          </thead>
+          <tbody>
+            {codigos.map((c) => (
+              <tr key={c.codigo} className="border-t border-zinc-100">
+                <td className="p-2.5 mono font-semibold">{c.codigo}</td>
+                <td className="p-2.5">{c.empresa || "-"}</td>
+                <td className="p-2.5">{new Date(c.data).toLocaleString("pt-BR")}</td>
+                <td className="p-2.5">
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${c.status === "disponivel" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-zinc-100 text-zinc-600"}`}>{c.status}</span>
+                </td>
+                <td className="p-2.5 text-right">
+                  <button onClick={() => salvar(codigos.filter((x) => x.codigo !== c.codigo))} className="h-7 w-7 inline-flex items-center justify-center rounded-lg hover:bg-zinc-100">
+                    <Icon path={ICONS.trash} className="h-4 w-4" />
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {codigos.length === 0 && <tr><td colSpan={5} className="p-6 text-center text-zinc-400">Nenhum código</td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function AbaArquivo() {
+  const [fichas, setFichas] = React.useState(Store.getFichas());
+  const [busca, setBusca] = React.useState("");
+  const [selecionada, setSelecionada] = React.useState(null);
+  const [importar, setImportar] = React.useState("");
+
+  function salvar(novas) { setFichas(novas); Store.setFichas(novas); }
+
+  const filtradas = React.useMemo(() => {
+    const b = busca.toLowerCase();
+    if (!b) return fichas;
+    return fichas.filter((f) => f.razao.toLowerCase().includes(b) || f.protocolo.toLowerCase().includes(b) || f.cnpj.includes(b));
+  }, [fichas, busca]);
+
+  function exportarCSV() {
+    const linhas = fichas.map((f) =>
+      `"${f.protocolo}","${f.dataHora}","${f.codigoUsado}","${f.razao.replace(/"/g, '""')}","${f.cnpj}","${f.responsavel}","${f.whatsapp}","${f.email}","${f.endereco.replace(/"/g, '""')}","${f.tipoServico}","${f.grupoEconomico}","${(f.grupoQual || "").replace(/"/g, '""')}","${f.faturadoMesmoCnpj}","${f.faturadoCnpj || ""}"`
+    ).join("\n");
+    const csv = "Protocolo,Data,Código,Razão,CNPJ,Responsável,WhatsApp,E-mail,Endereço,Tipo,Grupo,QualGrupo,FaturadoMesmo,FaturadoCNPJ\n" + linhas;
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "fichas_manoel.csv"; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function tentarImportar() {
+    try {
+      if (!importar.trim()) return;
+      let dados = null;
+      try { dados = JSON.parse(importar); } catch {}
+      if (dados) {
+        const lista = (Array.isArray(dados) ? dados : [dados]).filter((x) => x.protocolo);
+        if (lista.length) {
+          salvar([...lista, ...fichas]);
+          setImportar("");
+          alert(`${lista.length} ficha(s) importada(s)`);
+          return;
+        }
+      }
+      alert("Cole o JSON da ficha exportada. Formato não reconhecido.");
+    } catch { alert("Erro ao importar"); }
+  }
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h3 className="font-semibold">Arquivo de Fichas ({fichas.length})</h3>
+        <div className="flex gap-2">
+          <div className="relative">
+            <Icon path={ICONS.search} className="h-4 w-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar razão, protocolo, CNPJ"
+              className="h-9 pl-8 pr-3 rounded-full border border-zinc-200 text-[12px] w-[220px] outline-none focus:border-zinc-900" />
+          </div>
+          <button onClick={exportarCSV} className="h-9 px-3 rounded-full bg-zinc-900 text-white text-[12px] font-semibold flex items-center gap-1.5">
+            <Icon path={ICONS.download} className="h-3.5 w-3.5" /> Exportar CSV
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-4">
+        <div className="rounded-xl border border-zinc-200 overflow-auto max-h-[420px]">
+          <table className="w-full text-[12px]">
+            <thead className="sticky top-0 bg-zinc-50 text-[11px] uppercase tracking-widest text-zinc-500">
+              <tr><th className="text-left p-2.5">Protocolo</th><th className="text-left p-2.5">Empresa</th><th className="text-left p-2.5">Data</th><th className="text-right p-2.5">Ver</th></tr>
+            </thead>
+            <tbody>
+              {filtradas.map((f) => (
+                <tr key={f.protocolo} onClick={() => setSelecionada(f)}
+                  className={`border-t border-zinc-100 hover:bg-zinc-50 cursor-pointer ${selecionada?.protocolo === f.protocolo ? "bg-orange-50" : ""}`}>
+                  <td className="p-2.5 mono text-[11px] font-semibold">{f.protocolo}</td>
+                  <td className="p-2.5"><div className="font-medium truncate max-w-[180px]">{f.razao}</div><div className="mono text-[10px] text-zinc-500">{f.cnpj}</div></td>
+                  <td className="p-2.5 text-[11px]">{f.dataHora}</td>
+                  <td className="p-2.5 text-right"><Icon path="M2.06 12.35a1 1 0 0 1 0-.7 10.75 10.75 0 0 1 19.88 0 1 1 0 0 1 0 .7 10.75 10.75 0 0 1-19.88 0 M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6" className="h-4 w-4 inline" /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {filtradas.length === 0 && <div className="p-8 text-center text-[12px] text-zinc-400">Nenhuma ficha</div>}
+        </div>
+
+        <div className="space-y-4">
+          <div className="rounded-xl border border-zinc-200 p-4 bg-zinc-50/50">
+            <div className="text-[11px] font-bold uppercase tracking-widest">Importar ficha (JSON)</div>
+            <p className="text-[11px] text-zinc-500 mt-1">Cole o JSON exportado de outra sessão para mesclar aqui.</p>
+            <textarea value={importar} onChange={(e) => setImportar(e.target.value)} rows={4}
+              className="mt-2 w-full rounded-xl border border-zinc-200 p-2.5 text-[12px] outline-none focus:border-zinc-900"
+              placeholder="Cole aqui o JSON da ficha..." />
+            <button onClick={tentarImportar} className="mt-2 h-8 px-3 rounded-full bg-white border border-zinc-200 text-[11px] font-semibold">Importar</button>
+          </div>
+
+          {selecionada ? (
+            <div className="rounded-xl border border-zinc-200 p-4">
+              <div className="flex items-center justify-between">
+                <div className="mono font-bold">{selecionada.protocolo}</div>
+                <button onClick={() => setSelecionada(null)} className="text-[11px] underline">Fechar</button>
+              </div>
+              <div className="mt-3 space-y-1.5 text-[12px]">
+                <div><b>Razão:</b> {selecionada.razao}</div>
+                <div><b>CNPJ:</b> {selecionada.cnpj}</div>
+                <div><b>Responsável:</b> {selecionada.responsavel}</div>
+                <div><b>Whats:</b> {selecionada.whatsapp}</div>
+                <div><b>Endereço:</b> {selecionada.endereco}</div>
+                <div><b>Tipo:</b> {selecionada.tipoServico} • <b>Grupo:</b> {selecionada.grupoEconomico} {selecionada.grupoQual}</div>
+                <div><b>Faturamento:</b> {selecionada.faturadoMesmoCnpj} {selecionada.faturadoCnpj}</div>
+                <div className="pt-2 flex gap-2">
+                  <button onClick={() => { if (confirm("Excluir ficha?")) { salvar(fichas.filter((f) => f.protocolo !== selecionada.protocolo)); setSelecionada(null); } }}
+                    className="h-8 px-3 rounded-full border border-zinc-200 text-[11px]">Excluir</button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-zinc-300 p-6 text-center text-[12px] text-zinc-400">Selecione uma ficha para ver detalhes</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AbaDocumentos() {
+  const [docs, setDocsState] = React.useState(Store.getDocs());
+  const [editandoId, setEditandoId] = React.useState(null);
+  const [titulo, setTitulo] = React.useState("");
+  const [url, setUrl] = React.useState("");
+  const [descricao, setDescricao] = React.useState("");
+  const [obrigatorio, setObrigatorio] = React.useState(true);
+
+  function salvar(novos) { setDocsState(novos); Store.setDocs(novos); }
+
+  function limparForm() { setTitulo(""); setUrl(""); setDescricao(""); setObrigatorio(true); setEditandoId(null); }
+
+  function salvarDocumento() {
+    if (!titulo.trim() || !url.trim()) { alert("Preencha Título e URL obrigatórios"); return; }
+    if (editandoId) {
+      salvar(docs.map((d) => d.id === editandoId ? { ...d, titulo: titulo.trim(), url: url.trim(), descricao: descricao.trim(), obrigatorio } : d));
+    } else {
+      salvar([{ id: "doc_" + Date.now(), titulo: titulo.trim(), url: url.trim(), descricao: descricao.trim(), obrigatorio }, ...docs]);
+    }
+    limparForm();
+  }
+
+  function editar(d) { setEditandoId(d.id); setTitulo(d.titulo); setUrl(d.url); setDescricao(d.descricao); setObrigatorio(d.obrigatorio); }
+  function excluir(id) { if (!confirm("Excluir este documento?")) return; salvar(docs.filter((d) => d.id !== id)); if (editandoId === id) limparForm(); }
+
+  function restaurarPadrao() {
+    if (docs.some((d) => d.id === "termo-gps-padrao")) {
+      if (!confirm("Já existe o termo padrão. Restaurar mesmo assim (adiciona novamente)?")) return;
+    }
+    salvar([...DOCS_PADRAO, ...docs.filter((d) => d.id !== "termo-gps-padrao")]);
+  }
+
+  return (
+    <div className="max-w-[720px] space-y-6">
+      <div>
+        <h3 className="font-semibold flex items-center gap-2"><Icon path="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4 M14 2v4a2 2 0 0 0 2 2h4 M3 15h6 M6 12v6" className="h-4 w-4" /> Documentos de Próximas Fases</h3>
+        <p className="text-[12px] text-zinc-500 mt-1">Cadastre links de documentos que o cliente verá após enviar a ficha (ex: Termo de Conflito GPS).</p>
+      </div>
+
+      <div className="rounded-[16px] border border-zinc-200 p-4 sm:p-5 bg-zinc-50/60">
+        <div className="text-[11px] font-bold uppercase tracking-widest text-zinc-500 mb-3">{editandoId ? "Editar documento" : "Adicionar novo link"}</div>
+        <div className="grid grid-cols-1 gap-3">
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-widest text-zinc-500">Título *</label>
+            <input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ex: Termo de Declaração de Conflito - GPS"
+              className="mt-1 w-full h-[40px] rounded-xl border border-zinc-200 px-3.5 text-[13px] bg-white outline-none focus:border-zinc-900" />
+          </div>
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-widest text-zinc-500">URL *</label>
+            <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="/ficha/termo.html ou https://..."
+              className="mt-1 w-full h-[40px] rounded-xl border border-zinc-200 px-3.5 text-[13px] bg-white outline-none focus:border-zinc-900 mono" />
+          </div>
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-widest text-zinc-500">Descrição</label>
+            <input value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Baixe, preencha, assine e envie de volta via WhatsApp"
+              className="mt-1 w-full h-[40px] rounded-xl border border-zinc-200 px-3.5 text-[13px] bg-white outline-none focus:border-zinc-900" />
+          </div>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={obrigatorio} onChange={(e) => setObrigatorio(e.target.checked)} className="h-4 w-4 rounded border-zinc-300" />
+            <span className="text-[12px] font-medium">Obrigatório</span>
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={salvarDocumento} className="h-[40px] px-5 rounded-xl bg-zinc-900 text-white text-[13px] font-semibold hover:bg-black">{editandoId ? "Salvar Edição" : "Adicionar Documento"}</button>
+            {editandoId && <button onClick={limparForm} className="h-[40px] px-4 rounded-xl bg-white border border-zinc-200 text-[13px] font-medium">Cancelar</button>}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <h4 className="text-[13px] font-semibold">Links cadastrados ({docs.length})</h4>
+        <button onClick={restaurarPadrao} className="h-8 px-3 rounded-full bg-white border border-zinc-200 text-[11px] font-semibold">Restaurar Termo Padrão</button>
+      </div>
+
+      <div className="space-y-3">
+        {docs.map((d) => (
+          <div key={d.id} className="rounded-xl border border-zinc-200 bg-white p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-semibold text-[13px] truncate">{d.titulo}</span>
+                {d.obrigatorio && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-50 border border-red-200 text-red-700">Obrigatório</span>}
+              </div>
+              <div className="text-[11px] text-zinc-500 mt-0.5 truncate mono">{d.url}</div>
+              {d.descricao && <div className="text-[11px] text-zinc-600 mt-1">{d.descricao}</div>}
+            </div>
+            <div className="flex gap-2 shrink-0">
+              <a href={d.url} target="_blank" rel="noopener noreferrer" className="h-8 px-3 rounded-full bg-zinc-50 border border-zinc-200 text-[11px] font-semibold flex items-center gap-1 no-underline text-zinc-900">
+                <Icon path={ICONS.external} className="h-3.5 w-3.5" /> Abrir
+              </a>
+              <button onClick={() => editar(d)} className="h-8 w-8 rounded-full bg-white border border-zinc-200 flex items-center justify-center"><Icon path={ICONS.pencil} className="h-3.5 w-3.5" /></button>
+              <button onClick={() => excluir(d.id)} className="h-8 w-8 rounded-full bg-white border border-zinc-200 flex items-center justify-center text-zinc-500 hover:text-red-600"><Icon path={ICONS.trash} className="h-3.5 w-3.5" /></button>
+            </div>
+          </div>
+        ))}
+        {docs.length === 0 && <div className="rounded-xl border border-dashed border-zinc-300 p-8 text-center text-[12px] text-zinc-400">Nenhum documento cadastrado. O cliente não verá a seção de próximas fases.</div>}
+      </div>
+    </div>
+  );
+}
+
+function AbaConfig() {
+  const [whatsapp, setWhatsapp] = React.useState(Store.getWhats());
+  const [senhaAtual, setSenhaAtual] = React.useState("");
+  const [novaSenha, setNovaSenha] = React.useState("");
+  const [confirmaSenha, setConfirmaSenha] = React.useState("");
+
+  function alterarSenha() {
+    if (senhaAtual !== Store.getSenha()) { alert("Senha atual incorreta"); return; }
+    if (!novaSenha || novaSenha !== confirmaSenha) { alert("Nova senha não confere"); return; }
+    Store.setSenha(novaSenha);
+    setSenhaAtual(""); setNovaSenha(""); setConfirmaSenha("");
+    alert("Senha alterada com sucesso");
+  }
+
+  function salvarWhats() { Store.setWhats(whatsapp); alert("WhatsApp salvo"); }
+  function restaurarWhats() { setWhatsapp(WHATSAPP_PADRAO); Store.setWhats(WHATSAPP_PADRAO); }
+
+  function zerarDados() {
+    if (!confirm("Tem certeza? Isso apaga códigos e fichas deste navegador.")) return;
+    localStorage.removeItem("manoel_codigos_v2");
+    localStorage.removeItem("manoel_fichas_v2");
+    alert("Limpo. Recarregue a página para ver os efeitos.");
+  }
+
+  return (
+    <div className="max-w-[560px] space-y-6">
+      <div>
+        <h3 className="font-semibold">Alterar senha administrativa</h3>
+        <div className="mt-3 grid grid-cols-1 gap-3">
+          <input type="password" value={senhaAtual} onChange={(e) => setSenhaAtual(e.target.value)} placeholder="Senha atual"
+            className="h-[40px] rounded-xl border border-zinc-200 px-3.5 text-[13px] outline-none focus:border-zinc-900" />
+          <div className="grid grid-cols-2 gap-3">
+            <input type="password" value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} placeholder="Nova senha"
+              className="h-[40px] rounded-xl border border-zinc-200 px-3.5 text-[13px] outline-none focus:border-zinc-900" />
+            <input type="password" value={confirmaSenha} onChange={(e) => setConfirmaSenha(e.target.value)} placeholder="Confirmar nova"
+              className="h-[40px] rounded-xl border border-zinc-200 px-3.5 text-[13px] outline-none focus:border-zinc-900" />
+          </div>
+          <button onClick={alterarSenha} className="h-[40px] rounded-xl bg-zinc-900 text-white text-[13px] font-semibold">Salvar nova senha</button>
+        </div>
+      </div>
+
+      <div className="h-px bg-zinc-100" />
+
+      <div>
+        <h3 className="font-semibold">WhatsApp de recebimento</h3>
+        <p className="text-[11px] text-zinc-500 mt-1">Usado nos botões de envio do comprovante.</p>
+        <div className="mt-3 flex gap-2">
+          <input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value.replace(/\D/g, ""))}
+            className="flex-1 h-[40px] rounded-xl border border-zinc-200 px-3.5 mono text-[13px] outline-none focus:border-zinc-900" placeholder="5547992069588" />
+          <button onClick={salvarWhats} className="h-[40px] px-4 rounded-xl bg-white border border-zinc-200 text-[13px] font-semibold">Salvar</button>
+        </div>
+        <button onClick={restaurarWhats} className="mt-2 text-[11px] text-zinc-500 underline">Restaurar padrão {WHATSAPP_PADRAO}</button>
+      </div>
+
+      <div className="h-px bg-zinc-100" />
+
+      <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-[12px]">
+        <div className="font-semibold">Restaurar sistema</div>
+        <p className="text-[11px] text-zinc-600 mt-1">Apaga todos os códigos e fichas locais deste navegador. Use com cautela.</p>
+        <button onClick={zerarDados} className="mt-2 h-8 px-3 rounded-full bg-amber-900 text-amber-50 text-[11px] font-semibold">Zerar dados locais</button>
+      </div>
+    </div>
+  );
+}
+
+const ABAS = [
+  { chave: "gerar", label: "Gerar Código", icon: ICONS.key, componente: AbaGerar },
+  { chave: "lista", label: "Códigos Gerados", icon: "m3 17 2 2 4-4 m3 7 2 2 4-4 M13 6h8 M13 12h8 M13 18h8", componente: AbaLista },
+  { chave: "arquivo", label: "Arquivo", icon: "M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8 M10 12h4", componente: AbaArquivo },
+  { chave: "docs", label: "Documentos Fases", icon: ICONS.paperclip, componente: AbaDocumentos },
+  { chave: "config", label: "Configurações", icon: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6", componente: AbaConfig },
+];
+
+function Painel() {
+  const [aba, setAba] = React.useState("gerar");
+  const AbaAtual = ABAS.find((a) => a.chave === aba).componente;
+
+  return (
+    <div className="mx-auto max-w-[1000px]">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <h2 className="text-[20px] font-bold flex items-center gap-2">
+          <Icon path="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z m-8 4 2 2 4-4" className="h-5 w-5" />
+          Painel Administrativo
+        </h2>
+        <a href="./index.html" className="h-9 px-3 rounded-full bg-white border border-zinc-200 text-[12px] font-medium flex items-center no-underline text-zinc-900">Ver site cliente</a>
+      </div>
+
+      <div className="flex gap-2 overflow-auto pb-2">
+        {ABAS.map((a) => (
+          <button key={a.chave} onClick={() => setAba(a.chave)}
+            className={`h-9 px-4 rounded-full border text-[12px] font-semibold flex items-center gap-1.5 whitespace-nowrap ${aba === a.chave ? "bg-zinc-900 text-white border-zinc-900" : "bg-white border-zinc-200 hover:bg-zinc-50"}`}>
+            <Icon path={a.icon} className="h-3.5 w-3.5" /> {a.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-4 rounded-[18px] bg-white border border-zinc-200 shadow-sm p-5 sm:p-6">
+        <AbaAtual />
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [logado, setLogado] = React.useState(false);
+  return (
+    <div className="min-h-screen">
+      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur border-b border-zinc-200">
+        <div className="mx-auto w-full max-w-[1100px] px-4 h-[58px] flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-[8px] bg-[#1f2937] flex items-center justify-center text-white font-extrabold text-[13px]">MP</div>
+            <div className="leading-[1.1]">
+              <div className="font-extrabold tracking-[-0.02em] text-[13px] sm:text-[14px]">Manoel Pedra — Admin</div>
+            </div>
+          </div>
+          {logado && (
+            <button onClick={() => setLogado(false)} className="h-8 px-3 rounded-full bg-zinc-900 text-white text-[12px] font-semibold flex items-center gap-1.5">
+              <Icon path={ICONS.logout} className="h-3.5 w-3.5" /> Sair
+            </button>
+          )}
+        </div>
+      </header>
+      <main className="mx-auto w-full max-w-[1100px] px-4 py-6 sm:py-10">
+        {logado ? <Painel /> : <TelaLogin onEntrar={() => setLogado(true)} />}
+      </main>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
