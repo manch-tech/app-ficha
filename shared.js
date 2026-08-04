@@ -24,8 +24,8 @@ const DOCS_PADRAO = [
 // Para ativar, preencha e mude enabled para true
 // Se deixar enabled=false, o app funciona só com localStorage e não quebra
 const SUPABASE_CONFIG = {
-  url: "", // ex: https://xxxx.supabase.co
-  anonKey: "", // anon public key
+  url: "https://svrssmxrfzfmngzdtfbi.supabase.co", // ex: https://xxxx.supabase.co
+  anonKey: "sb_publishable_OuOYEmMOkgqB2q_RIIHVsg_NjbWWPFP", // anon public key
   enabled: false
 };
 
