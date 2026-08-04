@@ -1,4 +1,4 @@
-# Manoel Pedra - Ficha de Qualificação
+# M P - Ficha de Qualificação
 
 Sistema de geração de códigos e fichas de qualificação.
 
