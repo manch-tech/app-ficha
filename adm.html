@@ -9,6 +9,17 @@
 <script src="./shared.js"></script>
 </head>
 <body class="bg-zinc-50 min-h-screen">
+  <div id="tela-login" class="min-h-screen flex items-center justify-center bg-zinc-900 p-4 fixed inset-0 z-50">
+    <div class="bg-white rounded-[20px] p-8 max-w-[360px] w-full shadow-2xl">
+      <h2 class="font-bold text-lg">Acesso Restrito - Admin</h2>
+      <p class="text-xs text-zinc-500 mt-1">Manoel Pedra - Ficha - Digite email e senha</p>
+      <input id="login-email" placeholder="Email" type="email" class="mt-4 w-full h-11 border rounded-xl px-4 text-sm">
+      <input id="login-senha" placeholder="Senha" type="password" class="mt-2 w-full h-11 border rounded-xl px-4 text-sm">
+      <div id="login-erro" class="hidden mt-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl p-2"></div>
+      <button onclick="fazerLogin()" class="mt-3 w-full h-11 bg-zinc-900 text-white rounded-xl font-bold">Entrar</button>
+    </div>
+  </div>
+  <div id="conteudo-admin" class="hidden">
 <header class="bg-white border-b p-4 flex justify-between sticky top-0"><b>Painel Administrativo - Manoel Pedra - Supabase ON - Completo</b><a href="./index.html" class="text-xs underline">Site cliente</a></header>
 <main class="max-w-[1000px] mx-auto p-4">
   <div class="flex gap-2 mb-4 overflow-auto">
@@ -113,5 +124,31 @@ setTimeout(()=>{ Store.syncFromSupabase().then(()=>{renderCodigos(); renderFicha
 renderCodigos(); renderFichas(); renderDocs();
 window.addEventListener("mp_sync", ()=>{renderCodigos(); renderFichas(); renderDocs();});
 </script>
+
+</div>
+
+<script>
+  const ADMIN_EMAIL = "manchtec@gmail.com";
+  const ADMIN_SENHA = "Pedra@2026";
+  
+  function fazerLogin() {
+    const e = document.getElementById("login-email").value.trim().toLowerCase();
+    const s = document.getElementById("login-senha").value;
+    const erro = document.getElementById("login-erro");
+    if (e === ADMIN_EMAIL.toLowerCase() && s === ADMIN_SENHA) {
+      localStorage.setItem("mp_admin_logado", "1");
+      document.getElementById("tela-login").classList.add("hidden");
+      document.getElementById("conteudo-admin").classList.remove("hidden");
+    } else {
+      erro.textContent = "Email ou senha incorretos";
+      erro.classList.remove("hidden");
+    }
+  }
+  if (localStorage.getItem("mp_admin_logado") === "1") {
+    document.getElementById("tela-login").classList.add("hidden");
+    document.getElementById("conteudo-admin").classList.remove("hidden");
+  }
+</script>
+
 </body>
 </html>
