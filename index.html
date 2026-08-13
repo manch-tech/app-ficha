@@ -15,7 +15,7 @@ body{font-family:Inter,system-ui,sans-serif;background:#f9fafb}
 <body class="min-h-screen">
 <header class="no-print bg-white border-b sticky top-0 z-10">
   <div class="max-w-[1100px] mx-auto px-4 h-[56px] flex items-center justify-between">
-    <b class="text-sm">Manoel Pedra - Construcao - Reforma - Supabase ON</b>
+    <b class="text-sm">Manoel Pedra - Construcao - Reforma - Manutenção ON</b>
     <a href="./adm.html" class="text-xs underline">Admin</a>
   </div>
 </header>
@@ -25,11 +25,11 @@ body{font-family:Inter,system-ui,sans-serif;background:#f9fafb}
   <div id="tela-inicio" class="max-w-[460px] mx-auto">
     <div class="bg-white border rounded-[20px] p-6 shadow">
       <h2 class="font-bold text-lg">Ficha de Qualificacao</h2>
-      <p class="text-xs text-zinc-500 mt-1">Digite o codigo MP-XXXX recebido via WhatsApp. Codigo validado no Supabase.</p>
+      <p class="text-xs text-zinc-500 mt-1">Digite o codigo MP-XXXX recebido via WhatsApp. Codigo validado.</p>
       <input id="codigo" placeholder="MP-XXXX" class="mt-4 w-full h-[44px] border rounded-xl px-4 uppercase font-mono">
       <div id="erro-codigo" class="hidden text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl p-2 mt-2"></div>
       <button onclick="validar()" class="mt-3 w-full h-[44px] bg-[#ffbf00] rounded-xl font-bold">Validar e Continuar</button>
-      <div class="mt-3 text-center text-[11px] text-zinc-400">Sistema seguro - Supabase</div>
+      <div class="mt-3 text-center text-[11px] text-zinc-400">Sistema seguro </div>
     </div>
   </div>
 
@@ -44,9 +44,9 @@ body{font-family:Inter,system-ui,sans-serif;background:#f9fafb}
         <div><label class="text-[11px] font-bold uppercase">Responsavel *</label><input id="responsavel" class="w-full h-10 border rounded-xl px-3"></div>
         <div><label class="text-[11px] font-bold uppercase">WhatsApp *</label><input id="zap" class="w-full h-10 border rounded-xl px-3 font-mono" oninput="this.value=formatarTelefone(this.value)"></div>
         <div><label class="text-[11px] font-bold uppercase">Email</label><input id="email" class="w-full h-10 border rounded-xl px-3"></div>
-        <div class="sm:col-span-2"><label class="text-[11px] font-bold uppercase">Endereco da Obra *</label><input id="endereco" class="w-full h-10 border rounded-xl px-3"></div>
+        <div class="sm:col-span-2"><label class="text-[11px] font-bold uppercase">Endereco da Obra ou serviço *</label><input id="endereco" class="w-full h-10 border rounded-xl px-3"></div>
         <div><label class="text-[11px] font-bold uppercase">Tipo Servico</label><select id="tipo" class="w-full h-10 border rounded-xl px-3 bg-white"><option>Reforma</option><option>Construcao</option><option>Manutencao</option></select></div>
-        <div><label class="text-[11px] font-bold uppercase">Grupo Economico?</label><select id="grupo" class="w-full h-10 border rounded-xl px-3 bg-white"><option>Nao</option><option>Sim</option></select></div>
+        <div><label class="text-[11px] font-bold uppercase">Grupo Economico Empresarial?</label><select id="grupo" class="w-full h-10 border rounded-xl px-3 bg-white"><option>Nao</option><option>Sim</option></select></div>
         <div id="grupo-qual-wrap" class="hidden sm:col-span-2"><label class="text-[11px] font-bold uppercase">Qual grupo?</label><input id="grupoQual" class="w-full h-10 border rounded-xl px-3"></div>
         <div class="sm:col-span-2 mt-2 bg-amber-50 border border-amber-200 rounded-xl p-3 flex gap-2 text-xs"><input type="checkbox" id="decl"><label for="decl">Declaro que as informacoes sao verdadeiras, nao estou sendo influenciado por terceiros incluindo Grupo GPS, ciente da politica de conflito de interesses e autorizo verificacao dos dados (LGPD).</label></div>
         <div id="erro-ficha" class="hidden sm:col-span-2 text-xs text-red-600 bg-red-50 border rounded-xl p-2"></div>
@@ -62,7 +62,7 @@ body{font-family:Inter,system-ui,sans-serif;background:#f9fafb}
       <div id="dados-comp" class="mt-4 grid grid-cols-2 gap-3 text-sm"></div>
       <div class="mt-6 bg-zinc-50 border rounded-xl p-4 text-xs">
         <b>Declaracao Formal</b><br>
-        Declaro para os devidos fins que as informacoes prestadas sao verdadeiras e de minha inteira responsabilidade. Nao estou sendo influenciado por terceiros incluindo empresas do Grupo GPS. Ciente da politica de conflito de interesses de IVALCKMANOELCHAGAS - CNPJ 52.699.100/0001-51. Autorizo tratamento dos dados para qualificacao nos termos da LGPD.
+        Declaro para os devidos fins que as informações prestadas são verdadeiras e de minha inteira responsabilidade. Nao estou sendo influenciado por terceiros incluindo empresas do Grupo GPS. Ciente da política de conflito de interesses deste site e dos prestadores de serviços disponibilizados por essa plataforma. Autorizo tratamento dos dados para qualificação nos termos da LGPD.
         <div class="mt-3 text-[11px] text-zinc-500">Assinatura digital validada via protocolo <span id="proto2" class="font-mono"></span></div>
       </div>
       <div class="no-print mt-4 grid grid-cols-2 gap-3">
