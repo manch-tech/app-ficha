@@ -1,4 +1,4 @@
-# M P - Ficha de Qualificação
+# App - Ficha de Qualificação
 
 Sistema de geração de códigos e fichas de qualificação.
 
