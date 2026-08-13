@@ -1,8 +1,0 @@
-{
-  "name": "Manoel Pedra Ficha",
-  "short_name": "MP Ficha",
-  "start_url": "./index.html",
-  "display": "standalone",
-  "background_color": "#0f0f0f",
-  "theme_color": "#ffcc00"
-}
