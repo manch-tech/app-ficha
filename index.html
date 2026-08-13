@@ -1,518 +1,112 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Manoel Pedra — Ficha de Qualificação</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@700&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Manoel Pedra - Ficha de Qualificacao</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<style>
-  body { margin:0; font-family:'Inter',ui-sans-serif,system-ui,sans-serif; background:#f9fafb; color:#1f2937; }
-  .mono { font-family:'JetBrains Mono',monospace; }
-  .btn-primary {
-    background:#ffbf00; color:#000; font-family:'Montserrat',sans-serif; font-weight:700;
-  }
-  .btn-primary:hover { filter:brightness(0.95); }
-  @media print {
-    @page { margin:10mm; size:A4; }
-    .no-print { display:none !important; }
-    .print-full { box-shadow:none !important; border:none !important; margin:0 !important; }
-    body { background:white !important; }
-  }
-</style>
-</head>
-<body>
-<div id="root"></div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./shared.js"></script>
-<script type="text/babel" data-presets="react">
+<style>body{font-family:Inter,system-ui,sans-serif;background:#f9fafb}</style>
+</head>
+<body class="min-h-screen">
+<header class="bg-white border-b p-4 flex justify-between">
+  <b>Manoel Pedra - Ficha - Supabase ON</b>
+  <a href="./adm.html" class="text-xs underline">Admin</a>
+</header>
+<main class="max-w-[480px] mx-auto p-4 mt-6">
+  <div id="tela-inicio" class="bg-white border rounded-[20px] p-6 shadow">
+    <h2 class="font-bold text-lg">Validar Codigo de Acesso</h2>
+    <p class="text-xs text-zinc-500 mt-1">Digite o codigo MP-XXXX enviado pelo WhatsApp. Salvo no Supabase.</p>
+    <input id="input-codigo" placeholder="MP-XXXX" class="mt-4 w-full h-[44px] border rounded-xl px-4 uppercase">
+    <div id="erro-codigo" class="text-xs text-red-600 mt-2 hidden"></div>
+    <button onclick="validarCodigo()" class="mt-3 w-full h-[44px] bg-[#ffbf00] rounded-xl font-bold">Validar e Continuar</button>
+    <button onclick="gerarDemo()" class="mt-2 w-full h-[36px] border rounded-xl text-xs">Gerar Demo (teste local)</button>
+  </div>
 
-function Header() {
-  const [logoOk, setLogoOk] = React.useState(true);
-  return (
-    <header className="no-print sticky top-0 z-30 bg-white/80 backdrop-blur border-b border-zinc-200">
-      <div className="mx-auto w-full max-w-[1100px] px-4 h-[58px] flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-[8px] bg-white border border-zinc-200 flex items-center justify-center overflow-hidden">
-            {logoOk ? (
-              <img
-                src={LOGO_URL}
-                alt="Manoel Pedra"
-                className="h-full w-full object-contain"
-                onError={() => setLogoOk(false)}
-              />
-            ) : (
-              <span className="text-[13px] font-extrabold bg-[#1f2937] text-white h-full w-full flex items-center justify-center">MP</span>
-            )}
-          </div>
-          <div className="leading-[1.1]">
-            <div className="font-extrabold tracking-[-0.02em] text-[13px] sm:text-[14px]">Manoel Pedra</div>
-            <div className="text-[10px] tracking-[0.14em] text-zinc-500 font-semibold">CONSTRUÇÃO · REFORMA · MANUTENÇÃO</div>
-          </div>
-        </div>
-        <a href={SITE_URL} target="_blank" rel="noopener noreferrer" className="hidden sm:flex items-center gap-1.5 text-[12px] font-medium text-zinc-600 hover:text-zinc-900">
-          <Icon path={ICONS.external} className="h-3.5 w-3.5" /> {SITE_URL.replace("https://", "")}
-        </a>
-      </div>
-    </header>
-  );
-}
-
-function WhatsAppChooser({ texto, onClose }) {
-  if (!texto) return null;
-  const numero = Store.getWhats();
-  return (
-    <div className="fixed inset-0 z-[999] bg-black/50 flex items-center justify-center p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-xl p-5 w-full max-w-[360px]">
-        <div className="flex justify-between items-center mb-3">
-          <b className="text-[14px]">Escolha como enviar</b>
-          <button onClick={onClose} className="h-7 w-7 rounded-full bg-zinc-100 hover:bg-zinc-200 flex items-center justify-center">✕</button>
-        </div>
-        <p className="text-[11px] text-zinc-500 mb-3">Se tiver WhatsApp e WhatsApp Business instalados, o celular vai perguntar qual usar.</p>
-        <a href={`https://wa.me/${numero}?text=${encodeURIComponent(texto)}`} target="_blank" rel="noopener noreferrer"
-           className="h-[44px] mb-2 bg-[#25D366] text-white rounded-lg flex items-center justify-center font-bold text-[13px] no-underline">
-          WhatsApp Pessoal
-        </a>
-        <a href={`https://api.whatsapp.com/send?phone=${numero}&text=${encodeURIComponent(texto)}`} target="_blank" rel="noopener noreferrer"
-           className="h-[44px] mb-2 bg-[#128C7E] text-white rounded-lg flex items-center justify-center font-bold text-[13px] no-underline">
-          WhatsApp Business
-        </a>
-        <a href={`mailto:atendimento@manoelpedra.com.br?subject=${encodeURIComponent("Ficha " + texto.slice(0, 30))}&body=${encodeURIComponent(texto)}`}
-           className="h-[44px] btn-primary rounded-lg flex items-center justify-center text-[13px] no-underline">
-          Email: atendimento@manoelpedra.com.br
-        </a>
-      </div>
+  <div id="tela-ficha" class="hidden bg-white border rounded-[20px] p-6 shadow">
+    <h2 class="font-bold">Ficha de Qualificacao</h2>
+    <div class="mt-4 space-y-3">
+      <div><label class="text-[11px] font-bold uppercase">Razao Social</label><input id="razao" class="w-full h-10 border rounded-xl px-3"></div>
+      <div><label class="text-[11px] font-bold uppercase">CNPJ</label><input id="cnpj" class="w-full h-10 border rounded-xl px-3" oninput="this.value=formatarCNPJ(this.value)"></div>
+      <div><label class="text-[11px] font-bold uppercase">Responsavel</label><input id="responsavel" class="w-full h-10 border rounded-xl px-3"></div>
+      <div><label class="text-[11px] font-bold uppercase">WhatsApp</label><input id="whatsapp" class="w-full h-10 border rounded-xl px-3" oninput="this.value=formatarTelefone(this.value)"></div>
+      <div><label class="text-[11px] font-bold uppercase">Endereco</label><input id="endereco" class="w-full h-10 border rounded-xl px-3"></div>
+      <button onclick="enviarFicha()" class="w-full h-[44px] bg-zinc-900 text-white rounded-xl font-bold mt-2">Enviar Ficha</button>
     </div>
-  );
-}
+  </div>
 
-function TelaInicio({ onValidar }) {
-  const [codigo, setCodigo] = React.useState("");
-  const [erro, setErro] = React.useState("");
-  const [codigos, setCodigos] = React.useState(Store.getCodigos());
-  
-  React.useEffect(()=>{
-    function onSync(){ setCodigos(Store.getCodigos()); }
-    window.addEventListener("mp_sync", onSync);
-    return ()=> window.removeEventListener("mp_sync", onSync);
-  },[]);
+  <div id="tela-ok" class="hidden bg-white border rounded-[20px] p-6 shadow text-center">
+    <h2 class="font-bold text-lg">Ficha Enviada!</h2>
+    <div class="mt-3 text-sm">Protocolo:</div>
+    <div id="protocolo-ok" class="font-mono font-bold text-xl mt-1"></div>
+    <button onclick="abrirWhats()" class="mt-4 w-full h-[44px] bg-[#25D366] text-white rounded-xl font-bold">Enviar via WhatsApp</button>
+    <button onclick="location.reload()" class="mt-2 w-full h-[36px] border rounded-xl text-xs">Voltar ao inicio</button>
+  </div>
+</main>
 
-  function validar() {
-    const c = codigo.trim().toUpperCase();
-    const encontrado = codigos.find((x) => x.codigo === c);
-    if (!encontrado || encontrado.status !== "disponivel") {
-      if (encontrado?.status === "usado") {
-        setErro("Este código já foi utilizado em " + new Date(encontrado.usadoEm || "").toLocaleString("pt-BR"));
-      } else {
-        setErro("Código inválido ou não encontrado. Solicite ao prestador via WhatsApp.");
-      }
-      return;
-    }
-    setErro("");
-    onValidar(c);
+<script>
+let codigoUsado = "";
+let fichaAtual = null;
+
+function validarCodigo(){
+  const c = document.getElementById("input-codigo").value.trim().toUpperCase();
+  const codigos = Store.getCodigos();
+  const enc = codigos.find(x=>x.codigo===c);
+  const erro = document.getElementById("erro-codigo");
+  if(!enc || enc.status!=="disponivel"){
+    erro.textContent = enc?.status==="usado" ? "Codigo ja usado em "+enc.usadoEm : "Codigo invalido. Va em adm.html e gere um.";
+    erro.classList.remove("hidden");
+    return;
   }
-
-  function gerarDemo() {
-    const c = gerarCodigo();
-    Store.setCodigos([{ codigo: c, data: new Date().toISOString(), status: "disponivel", empresa: "DEMO" }, ...codigos]);
-    setCodigo(c);
-    setCodigos(Store.getCodigos());
-  }
-
-  return (
-    <div className="mx-auto w-full max-w-full sm:max-w-[460px]">
-      <div className="rounded-[20px] bg-white border border-zinc-200 shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6 sm:p-8">
-        <div className="flex flex-col items-center text-center">
-          <div className="h-14 w-14 rounded-2xl bg-orange-50 border border-orange-100 flex items-center justify-center mb-4">
-            <Icon path={ICONS.lock} className="h-6 w-6 text-[#f97316]" />
-          </div>
-          <h1 className="text-[22px] font-bold tracking-[-0.02em]">Acesso Restrito</h1>
-          <p className="mt-2 text-[13px] leading-5 text-zinc-500 max-w-[300px]">
-            Digite o código enviado pelo WhatsApp <span className="font-semibold text-zinc-700">(47) 99206-9588</span> para liberar o formulário.
-          </p>
-        </div>
-
-        <div className="mt-6">
-          <label className="text-[11px] font-semibold tracking-widest text-zinc-500 uppercase">Código de acesso</label>
-          <div className="mt-2 flex flex-col sm:flex-row gap-3">
-            <input
-              value={codigo}
-              onChange={(e) => setCodigo(e.target.value.toUpperCase())}
-              placeholder="MP-1234"
-              className="mono flex-1 h-[44px] rounded-xl border border-zinc-200 px-4 text-[16px] font-semibold tracking-widest uppercase outline-none focus:border-[#f97316] focus:ring-4 focus:ring-orange-50"
-            />
-            <button onClick={validar} className="btn-primary h-[44px] px-5 rounded-xl active:scale-[0.98] transition">
-              Validar Código
-            </button>
-          </div>
-          {erro && (
-            <div className="mt-3 flex gap-2 text-[12px] text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-              <Icon path={ICONS.alert} className="h-4 w-4 shrink-0" /> {erro}
-            </div>
-          )}
-
-          <div className="mt-6 rounded-xl bg-zinc-50 border border-zinc-100 p-3 flex gap-2.5">
-            <Icon path="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z m-8 4 2 2 4-4" className="h-4 w-4 text-zinc-500 mt-0.5 shrink-0" />
-            <p className="text-[11.5px] leading-[1.4] text-zinc-600">
-              Formulário exclusivo com código liberado pelo prestador. Cada código só pode ser usado uma vez. Seus dados são usados apenas para qualificação conforme LGPD.
-            </p>
-          </div>
-
-          <div className="mt-3 p-3 bg-zinc-50 border border-zinc-100 rounded-xl">
-            <div className="text-[11px] font-bold tracking-widest text-zinc-500 uppercase">Não tem código?</div>
-            <div className="text-[11px] text-zinc-500 mt-1">Solicite por WhatsApp Business ou por e-mail. Resposta rápida.</div>
-            <div className="flex flex-col gap-2 mt-2.5">
-              <a href="https://wa.me/5547992069588?text=Ol%C3%A1%2C%20preciso%20de%20um%20c%C3%B3digo%20para%20a%20ficha" target="_blank" rel="noopener noreferrer"
-                 className="h-[40px] bg-[#25D366] text-white rounded-lg flex items-center justify-center font-bold text-[12px] no-underline">
-                WhatsApp
-              </a>
-              <a href="mailto:atendimento@manoelpedra.com.br?subject=Solicita%C3%A7%C3%A3o%20de%20c%C3%B3digo"
-                 className="h-[40px] bg-white border border-zinc-200 text-zinc-900 rounded-lg flex items-center justify-center font-bold text-[12px] no-underline">
-                Email: atendimento@manoelpedra.com.br
-              </a>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-4 flex items-center justify-center gap-2 text-[11px] text-zinc-400">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Sistema seguro • {new Date().getFullYear()} Manoel Pedra • Supabase ON
-        </div>
-      </div>
-    </div>
-  );
+  erro.classList.add("hidden");
+  codigoUsado = c;
+  document.getElementById("tela-inicio").classList.add("hidden");
+  document.getElementById("tela-ficha").classList.remove("hidden");
 }
 
-function TelaFicha({ codigoUsado, onTrocarCodigo, onEnviado }) {
-  const [form, setForm] = React.useState({
-    razao: "", cnpj: "", responsavel: "", whatsapp: "", email: "", endereco: "",
-    tipoServico: "Reforma", grupoEconomico: "Não", grupoQual: "",
-    faturadoMesmoCnpj: "Sim", faturadoCnpj: "", declaracao: false,
-  });
-  const [erro, setErro] = React.useState("");
-
-  function set(campo, valor) { setForm((f) => ({ ...f, [campo]: valor })); }
-
-  function enviar() {
-    setErro("");
-    if (!form.razao || !form.cnpj || !form.responsavel || !form.whatsapp || !form.endereco) {
-      setErro("Preencha todos os campos obrigatórios (*).");
-      return;
-    }
-    if (form.cnpj.replace(/\D/g, "").length !== 14) {
-      setErro("CNPJ inválido.");
-      return;
-    }
-    if (!form.declaracao) {
-      setErro("Você precisa aceitar a declaração de veracidade.");
-      return;
-    }
-    const protocolo = gerarProtocolo();
-    const dataHora = new Date().toLocaleString("pt-BR");
-    const ficha = { protocolo, codigoUsado, dataHora, dataISO: new Date().toISOString(), ...form };
-
-    Store.setFichas([ficha, ...Store.getFichas()]);
-    Store.setCodigos(
-      Store.getCodigos().map((c) =>
-        c.codigo === codigoUsado ? { ...c, status: "usado", usadoEm: new Date().toISOString() } : c
-      )
-    );
-    onEnviado(ficha);
-  }
-
-  return (
-    <div className="mx-auto max-w-[720px]">
-      <div className="mb-4 flex items-center gap-2 no-print">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-[11px] font-bold text-emerald-700">
-          <Icon path={ICONS.check} className="h-3.5 w-3.5" /> Código validado: <span className="mono">{codigoUsado}</span>
-        </span>
-        <button onClick={onTrocarCodigo} className="text-[11px] text-zinc-500 hover:text-zinc-700 underline">Trocar código</button>
-      </div>
-
-      <div className="rounded-[20px] bg-white border border-zinc-200 shadow-sm overflow-hidden">
-        <div className="px-6 sm:px-8 py-6 border-b border-zinc-100">
-          <h2 className="text-[18px] font-bold flex items-center gap-2">
-            <Icon path={ICONS.building} className="h-5 w-5 text-[#f97316]" /> Ficha de Qualificação
-          </h2>
-          <p className="text-[12px] text-zinc-500 mt-1">Preencha com dados reais da empresa solicitante. Campos com * são obrigatórios.</p>
-        </div>
-
-        <div className="p-6 sm:p-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Campo label="Razão Social *" wide value={form.razao} onChange={(v) => set("razao", v)} placeholder="Ex: CONSTRUTORA MODELO LTDA" />
-          <Campo label="CNPJ *" mono value={form.cnpj} onChange={(v) => set("cnpj", formatarCNPJ(v))} placeholder="00.000.000/0000-00" />
-          <Campo label="Responsável *" value={form.responsavel} onChange={(v) => set("responsavel", v)} placeholder="Nome completo" />
-          <Campo label="WhatsApp *" mono value={form.whatsapp} onChange={(v) => set("whatsapp", formatarTelefone(v))} placeholder="(47) 9 0000-0000" />
-          <Campo label="E-mail" value={form.email} onChange={(v) => set("email", v)} placeholder="contato@empresa.com" />
-          <Campo label="Endereço da Obra *" wide value={form.endereco} onChange={(v) => set("endereco", v)} placeholder="Rua, número, bairro, cidade - UF" />
-
-          <div>
-            <label className="text-[11px] font-semibold uppercase tracking-widest text-zinc-500">Tipo de Serviço</label>
-            <select value={form.tipoServico} onChange={(e) => set("tipoServico", e.target.value)}
-              className="mt-1.5 w-full h-[42px] rounded-xl border border-zinc-200 px-3.5 text-[14px] bg-white outline-none focus:border-zinc-900">
-              <option>Reforma</option><option>Construção</option><option>Manutenção</option><option>Outro</option>
-            </select>
-          </div>
-
-          <ToggleField label="Faz parte de grupo econômico?" opcoes={["Não", "Sim"]} valor={form.grupoEconomico} onChange={(v) => set("grupoEconomico", v)} />
-
-          {form.grupoEconomico === "Sim" && (
-            <Campo label="Qual grupo?" wide value={form.grupoQual} onChange={(v) => set("grupoQual", v)} placeholder="Nome do grupo econômico" />
-          )}
-
-          <ToggleField label="Faturado no mesmo CNPJ?" opcoes={["Sim", "Não"]} valor={form.faturadoMesmoCnpj} onChange={(v) => set("faturadoMesmoCnpj", v)} />
-
-          {form.faturadoMesmoCnpj === "Não" && (
-            <Campo label="CNPJ de faturamento" mono value={form.faturadoCnpj} onChange={(v) => set("faturadoCnpj", formatarCNPJ(v))} placeholder="00.000.000/0000-00" />
-          )}
-
-          <div className="sm:col-span-2 mt-2 rounded-xl bg-amber-50 border border-amber-200 p-4 flex gap-3">
-            <input type="checkbox" checked={form.declaracao} onChange={(e) => set("declaracao", e.target.checked)} className="mt-1 h-4 w-4 rounded border-zinc-300" />
-            <p className="text-[12px] leading-[1.5] text-zinc-700">
-              Declaro que as informações são verdadeiras, <b>não estou sendo influenciado por terceiros incluindo Grupo GPS</b>, estou ciente da política de conflito de interesses e autorizo verificação dos dados para fins de qualificação.
-            </p>
-          </div>
-
-          {erro && (
-            <div className="sm:col-span-2 text-[12px] text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5 flex gap-2">
-              <Icon path={ICONS.alert} className="h-4 w-4" /> {erro}
-            </div>
-          )}
-
-          <div className="sm:col-span-2 mt-1">
-            <button onClick={enviar} className="btn-primary w-full h-[46px] rounded-xl active:scale-[0.99] transition flex items-center justify-center gap-2">
-              <Icon path={ICONS.fileText} className="h-4 w-4" /> Gerar Ficha e Enviar
-            </button>
-            <p className="text-[11px] text-zinc-400 text-center mt-2">Ao enviar, um protocolo será gerado e o comprovante poderá ser encaminhado via WhatsApp. Salvo no Supabase.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+function gerarDemo(){
+  const c = gerarCodigo();
+  Store.setCodigos([{codigo:c, data:new Date().toISOString(), status:"disponivel", empresa:"DEMO"}, ...Store.getCodigos()]);
+  document.getElementById("input-codigo").value = c;
+  alert("Demo gerado: "+c+" - clique Validar");
 }
 
-function Campo({ label, value, onChange, placeholder, mono, wide }) {
-  return (
-    <div className={wide ? "sm:col-span-2" : ""}>
-      <label className="text-[11px] font-semibold uppercase tracking-widest text-zinc-500">{label}</label>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className={`mt-1.5 w-full h-[42px] rounded-xl border border-zinc-200 px-3.5 text-[14px] outline-none focus:border-zinc-900 ${mono ? "mono" : ""}`}
-      />
-    </div>
-  );
+function enviarFicha(){
+  const razao = document.getElementById("razao").value.trim();
+  const cnpj = document.getElementById("cnpj").value.trim();
+  const responsavel = document.getElementById("responsavel").value.trim();
+  const whatsapp = document.getElementById("whatsapp").value.trim();
+  const endereco = document.getElementById("endereco").value.trim();
+  if(!razao || !cnpj || !responsavel){ alert("Preencha razao, cnpj e responsavel"); return; }
+  if(cnpj.replace(/\D/g,"").length!==14){ alert("CNPJ invalido"); return; }
+
+  const protocolo = gerarProtocolo();
+  const ficha = {
+    protocolo,
+    razao, cnpj, responsavel, whatsapp, endereco,
+    codigoUsado,
+    dataISO: new Date().toISOString(),
+    dataHora: new Date().toLocaleString("pt-BR")
+  };
+  Store.setFichas([ficha, ...Store.getFichas()]);
+  // marca codigo como usado
+  const codigos = Store.getCodigos().map(x=> x.codigo===codigoUsado ? {...x, status:"usado", usadoEm:new Date().toISOString()} : x);
+  Store.setCodigos(codigos);
+  fichaAtual = ficha;
+  document.getElementById("tela-ficha").classList.add("hidden");
+  document.getElementById("protocolo-ok").textContent = protocolo;
+  document.getElementById("tela-ok").classList.remove("hidden");
 }
 
-function ToggleField({ label, opcoes, valor, onChange }) {
-  return (
-    <div>
-      <label className="text-[11px] font-semibold uppercase tracking-widest text-zinc-500">{label}</label>
-      <div className="mt-1.5 flex gap-2">
-        {opcoes.map((op) => (
-          <button key={op} onClick={() => onChange(op)}
-            className={`flex-1 h-[42px] rounded-xl border text-[13px] font-medium ${valor === op ? "bg-zinc-900 text-white border-zinc-900" : "bg-white border-zinc-200 hover:bg-zinc-50"}`}>
-            {op}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
+function abrirWhats(){
+  const texto = `FICHA QUALIFICACAO - ${fichaAtual.razao} - CNPJ ${fichaAtual.cnpj} - Protocolo ${fichaAtual.protocolo} - Resp ${fichaAtual.responsavel}`;
+  const num = Store.getWhats();
+  window.open(`https://wa.me/${num}?text=${encodeURIComponent(texto)}`, "_blank");
 }
 
-function TelaComprovante({ ficha, onVoltar }) {
-  const [enviado, setEnviado] = React.useState(false);
-  const [chooserTexto, setChooserTexto] = React.useState(null);
-  const docs = Store.getDocs();
-
-  function textoWhats() {
-    return `Olá Manoel! Acabei de preencher a ficha de qualificação.
-
-*Protocolo:* ${ficha.protocolo}
-*Código:* ${ficha.codigoUsado}
-*Empresa:* ${ficha.razao}
-*CNPJ:* ${ficha.cnpj}
-*Responsável:* ${ficha.responsavel}
-*Endereço Obra:* ${ficha.endereco}
-*Tipo:* ${ficha.tipoServico}
-
-Aguardo retorno.`;
-  }
-
-  async function copiarComprovante() {
-    const texto = `COMPROVANTE - MANOEL PEDRA
-Protocolo: ${ficha.protocolo}
-Data: ${ficha.dataHora}
-Código: ${ficha.codigoUsado}
-Empresa: ${ficha.razao}
-CNPJ: ${ficha.cnpj}
-Responsável: ${ficha.responsavel}
-WhatsApp: ${ficha.whatsapp}
-Endereço: ${ficha.endereco}`;
-    try {
-      await navigator.clipboard.writeText(texto);
-      alert("Comprovante copiado! Cole em um documento para salvar em PDF.");
-    } catch {
-      alert(texto);
-    }
-  }
-
-  return (
-    <div className="mx-auto max-w-[800px]">
-      <WhatsAppChooser texto={chooserTexto} onClose={() => setChooserTexto(null)} />
-
-      <div className="print-full rounded-[20px] bg-white border border-zinc-200 shadow-sm p-6 sm:p-10">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex gap-3">
-            <div className="h-10 w-10 rounded-xl bg-zinc-900 text-white flex items-center justify-center font-extrabold">MP</div>
-            <div>
-              <div className="font-extrabold tracking-[-0.02em]">MANOEL PEDRA</div>
-              <div className="text-[11px] text-zinc-500 tracking-widest uppercase">Ficha de Qualificação • Documento do Prestador de Serviço</div>
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="text-[10px] uppercase tracking-widest text-zinc-400">Protocolo</div>
-            <div className="mono text-[16px] sm:text-[20px] font-bold">{ficha.protocolo}</div>
-            <div className="text-[11px] text-zinc-500">{ficha.dataHora}</div>
-          </div>
-        </div>
-
-        <div className="mt-6 h-px bg-zinc-100" />
-
-        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-5 text-[13px]">
-          <Dado label="Código utilizado" mono>{ficha.codigoUsado}</Dado>
-          <Dado label="Tipo serviço">{ficha.tipoServico}</Dado>
-          <Dado label="Razão Social" wide bold>{ficha.razao}</Dado>
-          <Dado label="CNPJ" mono>{ficha.cnpj}</Dado>
-          <Dado label="Responsável">{ficha.responsavel}</Dado>
-          <Dado label="WhatsApp" mono>{ficha.whatsapp}</Dado>
-          <Dado label="E-mail">{ficha.email || "-"}</Dado>
-          <Dado label="Endereço Obra" wide>{ficha.endereco}</Dado>
-          <Dado label="Grupo econômico">{ficha.grupoEconomico}{ficha.grupoQual ? ` • ${ficha.grupoQual}` : ""}</Dado>
-          <Dado label="Faturamento">{ficha.faturadoMesmoCnpj === "Sim" ? "Mesmo CNPJ" : `Outro CNPJ: ${ficha.faturadoCnpj}`}</Dado>
-        </div>
-
-        <div className="mt-8 rounded-xl bg-zinc-50 border border-zinc-200 p-4">
-          <div className="text-[11px] font-bold uppercase tracking-widest">Declaração Formal</div>
-          <p className="mt-2 text-[12px] leading-[1.6] text-zinc-700">
-            Declaro para os devidos fins que as informações prestadas nesta ficha são verdadeiras e de minha inteira responsabilidade.
-            Declaro ainda que não estou sendo influenciado por terceiros, incluindo empresas do <b>Grupo GPS</b> ou coligadas, e que
-            estou ciente da política de conflito de interesses de IVALCKMANOELCHAGAS - CNPJ: 52.699.100/0001-51. Autorizo o tratamento
-            dos dados para processo de qualificação, nos termos da LGPD.
-          </p>
-          <div className="mt-4 flex gap-6 text-[11px] text-zinc-500">
-            <span>Assinatura digital validada via protocolo</span><span>•</span><span>{ficha.protocolo}</span>
-          </div>
-        </div>
-
-        <div className="no-print mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <button onClick={() => { setEnviado(true); setChooserTexto(textoWhats()); }}
-            className="h-[46px] rounded-xl bg-[#25D366] text-white font-semibold text-[14px] flex items-center justify-center gap-2 hover:brightness-95">
-            <Icon path={ICONS.message} className="h-4 w-4" /> Enviar via WhatsApp para Manoel
-          </button>
-          <button onClick={copiarComprovante}
-            className="h-[46px] rounded-xl bg-zinc-900 text-white font-semibold text-[14px] flex items-center justify-center gap-2 hover:bg-black">
-            <Icon path={ICONS.copy} className="h-4 w-4" /> Copiar Comprovante
-          </button>
-        </div>
-
-        {!enviado ? (
-          <div className="no-print mt-4 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-[12px] text-amber-900 flex gap-2">
-            <Icon path={ICONS.alert} className="h-4 w-4 shrink-0" /> Arquivo só será considerado válido após envio via WhatsApp para o número oficial. Guarde seu protocolo.
-          </div>
-        ) : (
-          <div className="no-print mt-4 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-[12px] text-emerald-900 flex gap-2">
-            <Icon path={ICONS.check} className="h-4 w-4 shrink-0" /> Envio iniciado. Se o WhatsApp não abriu, copie o protocolo <b className="mono">{ficha.protocolo}</b> e envie manualmente para (47) 99206-9588.
-          </div>
-        )}
-
-        <div className="mt-6 text-center text-[10px] text-zinc-400">
-          Documento gerado em {ficha.dataHora} • {FICHA_URL} • Uso exclusivo Manoel Pedra
-        </div>
-      </div>
-
-      {docs.length > 0 && (
-        <div className="no-print mt-5 rounded-[20px] bg-white border border-zinc-200 shadow-sm p-6 sm:p-7">
-          <div className="flex items-start gap-3">
-            <div className="h-10 w-10 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center shrink-0">
-              <Icon path={ICONS.paperclip} className="h-5 w-5 text-[#f97316]" />
-            </div>
-            <div>
-              <h3 className="text-[15px] font-bold">📎 Próximas Fases - Documentos</h3>
-              <p className="text-[12px] text-zinc-500 mt-1 leading-[1.5]">Se necessário avançar para orçamento, providencie os documentos abaixo. Baixe, preencha e envie de volta via WhatsApp junto com o protocolo.</p>
-            </div>
-          </div>
-
-          <div className="mt-5 grid grid-cols-1 gap-3">
-            {docs.map((d) => (
-              <div key={d.id} className="rounded-[14px] border border-zinc-200 bg-[#fcfcfd] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-[13px]">{d.titulo}</span>
-                    {d.obrigatorio && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800">Obrigatório</span>}
-                  </div>
-                  {d.descricao && <div className="text-[12px] text-zinc-600 mt-1">{d.descricao}</div>}
-                  <div className="text-[11px] text-zinc-400 mt-1 mono truncate max-w-[300px]">{d.url}</div>
-                </div>
-                <a href={d.url} target="_blank" rel="noopener noreferrer"
-                  className="shrink-0 h-[40px] px-5 rounded-xl bg-zinc-900 text-white text-[12px] font-semibold flex items-center justify-center gap-1.5 hover:bg-black">
-                  <Icon path={ICONS.external} className="h-4 w-4" /> Acessar / Baixar
-                </a>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="no-print mt-4 flex justify-center">
-        <button onClick={onVoltar} className="text-[12px] text-zinc-500 hover:text-zinc-700 underline">Voltar ao início</button>
-      </div>
-    </div>
-  );
-}
-
-function Dado({ label, children, mono, bold, wide }) {
-  return (
-    <div className={wide ? "sm:col-span-2" : ""}>
-      <span className="text-[11px] uppercase tracking-widest text-zinc-400 block">{label}</span>
-      <span className={`${mono ? "mono" : ""} ${bold ? "font-semibold text-[15px]" : ""}`}>{children}</span>
-    </div>
-  );
-}
-
-function App() {
-  const [tela, setTela] = React.useState("inicio");
-  const [codigoUsado, setCodigoUsado] = React.useState("");
-  const [ficha, setFicha] = React.useState(null);
-
-  return (
-    <div className="min-h-screen selection:bg-orange-100">
-      <Header />
-      <main className="mx-auto w-full max-w-[1100px] px-4 py-6 sm:py-10">
-        {tela === "inicio" && <TelaInicio onValidar={(c) => { setCodigoUsado(c); setTela("form"); }} />}
-        {tela === "form" && (
-          <TelaFicha
-            codigoUsado={codigoUsado}
-            onTrocarCodigo={() => { setCodigoUsado(""); setTela("inicio"); }}
-            onEnviado={(f) => { setFicha(f); setTela("comprovante"); }}
-          />
-        )}
-        {tela === "comprovante" && ficha && (
-          <TelaComprovante ficha={ficha} onVoltar={() => { setFicha(null); setCodigoUsado(""); setTela("inicio"); }} />
-        )}
-      </main>
-      <footer className="no-print border-t border-zinc-200 mt-10 py-6 text-center text-[11px] text-zinc-400">
-        © {new Date().getFullYear()} Manoel Pedra • Construção • Reforma • Manutenção | Sistema de Qualificação • LGPD compliant • Supabase
-      </footer>
-    </div>
-  );
-}
-
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+// sync do supabase ao carregar
+setTimeout(()=>{ if(Store.syncFromSupabase) Store.syncFromSupabase(); }, 500);
 </script>
 </body>
 </html>
