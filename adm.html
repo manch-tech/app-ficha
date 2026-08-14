@@ -71,14 +71,21 @@
 
   <div id="aba-docs" class="hidden bg-white border rounded-xl p-5">
     <h3 class="font-bold">Documentos - Proximas Fases (cliente imprime)</h3>
-    <p class="text-xs text-zinc-500 mt-1">Esses documentos aparecem no comprovante para o cliente baixar e imprimir. AGORA SOMENTE SUPABASE.</p>
+    <p class="text-xs text-zinc-500 mt-1">Arraste o arquivo ou selecione. Vai direto pro Supabase e o botão Baixar funciona automaticamente.</p>
     <div id="lista-docs" class="mt-4 space-y-2"></div>
-    <div class="mt-4 border-t pt-4">
-      <h4 class="font-bold text-sm">Adicionar novo documento</h4>
-      <input id="doc-titulo" placeholder="Titulo Ex: Termo GPS" class="mt-2 w-full h-10 border rounded-xl px-3 text-sm">
-      <input id="doc-url" placeholder="URL Ex: ./ficha/termo.html ou https://..." class="mt-2 w-full h-10 border rounded-xl px-3 text-sm">
-      <input id="doc-desc" placeholder="Descricao opcional" class="mt-2 w-full h-10 border rounded-xl px-3 text-sm">
-      <button onclick="addDoc()" class="mt-2 h-10 px-5 bg-zinc-900 text-white rounded-xl text-sm">Adicionar Documento</button>
+    <div class="mt-4 border-t pt-4 bg-zinc-50 rounded-xl p-4">
+      <h4 class="font-bold text-sm">Adicionar novo documento com UPLOAD</h4>
+      <input id="doc-titulo" placeholder="Titulo Ex: Termo GPS" class="mt-2 w-full h-10 border rounded-xl px-3 text-sm bg-white">
+      <div class="mt-2 grid grid-cols-1 gap-2">
+        <label class="text-xs font-bold uppercase">Arquivo (PDF, HTML, DOC)</label>
+        <input id="doc-arquivo" type="file" accept=".pdf,.html,.htm,.doc,.docx,.png,.jpg,.jpeg" class="w-full text-sm file:mr-3 file:h-9 file:px-4 file:rounded-full file:border-0 file:bg-zinc-900 file:text-white file:text-xs">
+        <div id="doc-upload-status" class="text-xs text-zinc-500"></div>
+      </div>
+      <div class="mt-2 text-xs text-zinc-400">OU se preferir, cole uma URL existente:</div>
+      <input id="doc-url" placeholder="URL Ex: ./ficha/termo.html ou https://... (opcional se fez upload)" class="mt-1 w-full h-10 border rounded-xl px-3 text-sm bg-white">
+      <input id="doc-desc" placeholder="Descricao opcional" class="mt-2 w-full h-10 border rounded-xl px-3 text-sm bg-white">
+      <button id="btn-add-doc" onclick="addDoc()" class="mt-3 h-10 px-5 bg-zinc-900 text-white rounded-xl text-sm w-full font-bold">Salvar Documento</button>
+      <p class="mt-2 text-[11px] text-zinc-500">* Crie o bucket <b>documentos</b> como PUBLICO no Supabase > Storage antes do primeiro upload.</p>
     </div>
   </div>
 
@@ -135,7 +142,7 @@ function renderDocs(){
     document.getElementById("lista-docs").innerHTML=`<div class='text-xs text-zinc-500 p-3 border border-dashed rounded-xl'>Nenhum documento no Supabase<br><button onclick="restaurarPadrao()" class="mt-2 h-8 px-3 bg-[#ffbf00] rounded-full text-xs font-bold">Restaurar Termo Padrão</button></div>`;
     return;
   }
-  document.getElementById("lista-docs").innerHTML=docs.map(d=>`<div class="flex justify-between border rounded-xl p-3"><div><b>${d.titulo}</b><div class="text-xs text-zinc-500">${d.descricao||""} - ${d.url}</div></div><button onclick="delDoc('${d.id}')" class="text-red-600 text-xs">Excluir</button></div>`).join("");
+  document.getElementById("lista-docs").innerHTML=docs.map(d=>`<div class="flex justify-between border rounded-xl p-3"><div class="flex-1 mr-2"><b>${d.titulo}</b><div class="text-xs text-zinc-500 break-all">${d.descricao||""}<br><a href="${d.url}" target="_blank" class="text-blue-600 underline">${d.url}</a></div></div><button onclick="delDoc('${d.id}')" class="text-red-600 text-xs">Excluir</button></div>`).join("");
 }
 async function restaurarPadrao(){
   if(!confirm('Restaurar termo padrão no Supabase?')) return;
@@ -144,22 +151,59 @@ async function restaurarPadrao(){
   renderDocs();
   alert("Restaurado no Supabase");
 }
+async function uploadParaSupabase(file){
+  const sb = getSupabase();
+  if(!sb) throw new Error("Supabase não configurado");
+  const nomeLimpo = file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+  const nome = Date.now() + "-" + nomeLimpo;
+  const status = document.getElementById("doc-upload-status");
+  status.textContent = "Enviando " + file.name + " para Supabase...";
+  const { data, error } = await sb.storage.from("documentos").upload(nome, file, { upsert: true, contentType: file.type });
+  if(error){
+    console.error(error);
+    throw new Error("Erro no upload: " + error.message + " - Crie o bucket 'documentos' como PUBLICO no Supabase Storage");
+  }
+  const { data: urlData } = sb.storage.from("documentos").getPublicUrl(nome);
+  status.textContent = "Upload ok: " + urlData.publicUrl;
+  return urlData.publicUrl;
+}
+
 async function addDoc(){
+  const btn = document.getElementById("btn-add-doc");
   const titulo=document.getElementById("doc-titulo").value.trim();
-  const url=document.getElementById("doc-url").value.trim();
+  let url=document.getElementById("doc-url").value.trim();
   const desc=document.getElementById("doc-desc").value.trim();
-  if(!titulo||!url){ alert("Titulo e URL obrigatorios"); return; }
-  const doc={id:"doc-"+Date.now(), titulo, url, descricao:desc, obrigatorio:true};
-  const lista = [...(Store.getDocs()||[]), doc];
-  console.log("Salvando no Supabase:", lista);
+  const arquivoInput = document.getElementById("doc-arquivo");
+  const arquivo = arquivoInput.files[0];
+
+  if(!titulo){ alert("Titulo obrigatorio"); return; }
+  if(!arquivo && !url){ alert("Selecione um arquivo OU cole uma URL"); return; }
+
+  btn.disabled = true;
+  btn.textContent = "Salvando...";
+  
   try{
+    if(arquivo){
+      url = await uploadParaSupabase(arquivo);
+    }
+    const doc={id:"doc-"+Date.now(), titulo, url, descricao:desc, obrigatorio:true};
+    const lista = [...(Store.getDocs()||[]), doc];
+    console.log("Salvando no Supabase:", lista);
     await Store.setDocs(lista);
-    document.getElementById("doc-titulo").value=""; document.getElementById("doc-url").value=""; document.getElementById("doc-desc").value="";
+    document.getElementById("doc-titulo").value=""; 
+    document.getElementById("doc-url").value=""; 
+    document.getElementById("doc-desc").value="";
+    arquivoInput.value="";
+    document.getElementById("doc-upload-status").textContent="";
     renderDocs();
-    alert("Salvo no Supabase!");
+    alert("Documento salvo! Botão Baixar já vai funcionar com: " + url);
   }catch(e){
-    alert("Erro ao salvar: "+e.message);
+    alert("Erro: "+e.message);
     console.error(e);
+    document.getElementById("doc-upload-status").textContent = "Erro: " + e.message;
+  }finally{
+    btn.disabled = false;
+    btn.textContent = "Salvar Documento";
   }
 }
 async function delDoc(id){ 
