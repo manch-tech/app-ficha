@@ -93,16 +93,17 @@ async function sbFetchAll(table){
   }catch(e){ console.warn("Supabase fetch erro", table, e); return null; }
 }
 
+
 const Store = {
+  _docsCache: [],
+  _docsLoaded: false,
+
   getCodigos: () => lsGet("manoel_codigos_v2", []),
   setCodigos: (v) => {
     lsSet("manoel_codigos_v2", v);
-    // sync supabase async
     const rows = v.map(c=>({ id: c.codigo, codigo: c.codigo, payload: c, created_at: c.data || new Date().toISOString() }));
     sbUpsert("codigos", rows);
-    // se limpar tudo, deleta no supabase também? mantém por segurança, não deleta em massa
   },
-  // para deletar um código específico
   deleteCodigo: (codigo) => {
     const atual = Store.getCodigos().filter(x=>x.codigo!==codigo);
     lsSet("manoel_codigos_v2", atual);
@@ -127,56 +128,79 @@ const Store = {
   },
   setSenha: (v) => { try{ localStorage.setItem("manoel_admin_senha", v);}catch{} },
 
+  // DOCS - SOMENTE SUPABASE
   getDocs: () => {
-    const docs = lsGet("manoel_docs_links", null);
-    if (docs && Array.isArray(docs) && docs.length > 0) return docs;
-    lsSet("manoel_docs_links", DOCS_PADRAO);
-    return DOCS_PADRAO;
+    return Store._docsCache || [];
   },
-  setDocs: (v) => {
-    lsSet("manoel_docs_links", v);
-    const rows = v.map(d=>({ id: d.id, titulo: d.titulo, url: d.url, descricao: d.descricao||"", obrigatorio: !!d.obrigatorio, payload: d, created_at: new Date().toISOString() }));
-    sbUpsert("docs", rows);
+  setDocs: async (v) => {
+    Store._docsCache = Array.isArray(v) ? v : [];
+    Store._docsLoaded = true;
+    try{ localStorage.removeItem("manoel_docs_links"); }catch{}
+    const sb = getSupabase();
+    if(!sb) return;
+    if(Store._docsCache.length===0){
+      try{ 
+        const {error} = await sb.from("docs").delete().neq("id","__nunca__");
+        if(error) console.warn("delete all erro", error);
+      }catch(e){ console.warn(e); }
+    } else {
+      const rows = Store._docsCache.map(d=>({ id: d.id, titulo: d.titulo, url: d.url, descricao: d.descricao||"", obrigatorio: !!d.obrigatorio, payload: d, created_at: new Date().toISOString() }));
+      try{
+        const {error} = await sb.from("docs").upsert(rows, {onConflict:'id'});
+        if(error){ console.warn("upsert docs erro", error); alert("Erro Supabase: "+error.message); }
+      }catch(e){ console.warn(e); }
+    }
+    window.dispatchEvent(new Event("mp_sync"));
+  },
+  deleteDoc: async (id) => {
+    Store._docsCache = (Store._docsCache||[]).filter(x=>x.id!==id);
+    try{ localStorage.removeItem("manoel_docs_links"); }catch{}
+    await sbDelete("docs", id);
+    if(Store._docsCache.length===0){
+      const sb = getSupabase();
+      if(sb){
+        try{ await sb.from("docs").delete().neq("id","__nunca__"); }catch{}
+      }
+    }
+    window.dispatchEvent(new Event("mp_sync"));
+    return Store._docsCache;
   },
 
-  // Sincroniza do Supabase para localStorage (chamado no load)
   syncFromSupabase: async () => {
     const sb = getSupabase();
     if(!sb) return;
-    // codigos
     const codigos = await sbFetchAll("codigos");
     if(codigos && codigos.length){
       const lista = codigos.map(r=> r.payload || { codigo: r.codigo || r.id, data: r.created_at, status: "disponivel" }).filter(Boolean);
       if(lista.length) lsSet("manoel_codigos_v2", lista);
     }
-    // fichas
     const fichas = await sbFetchAll("fichas");
     if(fichas && fichas.length){
       const lista = fichas.map(r=> r.payload).filter(Boolean);
       if(lista.length) lsSet("manoel_fichas_v2", lista);
     }
-    // docs - APENAS SUPABASE
+    // docs - SOMENTE SUPABASE
     const docs = await sbFetchAll("docs");
     try{ localStorage.removeItem("manoel_docs_links"); }catch{}
     if(docs && docs.length){
       const lista = docs.map(r=> r.payload || { id: r.id, titulo: r.titulo, url: r.url, descricao: r.descricao, obrigatorio: r.obrigatorio }).filter(Boolean);
       Store._docsCache = lista;
+      Store._docsLoaded = true;
+    } else if(docs && docs.length===0){
+      // supabase vazio - respeita, fica vazio mesmo
+      Store._docsCache = [];
+      Store._docsLoaded = true;
     } else {
-      // se supabase vazio, deixa vazio mesmo (nao recria padrao automatico)
-      if(docs && docs.length===0){
+      // erro de fetch, se nunca carregou, usa padrao
+      if(!Store._docsLoaded){
         Store._docsCache = [];
-      } else if(!Store._docsLoaded){
-        // primeira vez sem supabase, usa padrao uma vez e salva
-        Store._docsCache = DOCS_PADRAO;
-        // salva no supabase
-        const rows = DOCS_PADRAO.map(d=>({ id: d.id, titulo: d.titulo, url: d.url, descricao: d.descricao||"", obrigatorio: !!d.obrigatorio, payload: d, created_at: new Date().toISOString() }));
-        sbUpsert("docs", rows);
+        Store._docsLoaded = true;
       }
     }
-    Store._docsLoaded = true;
     window.dispatchEvent(new Event("mp_sync"));
   }
 };
+
 
 // tenta sync ao carregar (não bloqueia UI)
 setTimeout(()=>{ Store.syncFromSupabase(); }, 800);
