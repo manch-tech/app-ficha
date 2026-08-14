@@ -129,16 +129,30 @@ const Store = {
 
   getDocs: () => {
     const docs = lsGet("manoel_docs_links", null);
-    if (docs && Array.isArray(docs) && docs.length > 0) return docs;
+    if (docs === null) {
+      lsSet("manoel_docs_links", DOCS_PADRAO);
+      return DOCS_PADRAO;
+    }
+    if (Array.isArray(docs)) return docs;
     lsSet("manoel_docs_links", DOCS_PADRAO);
     return DOCS_PADRAO;
   },
   setDocs: (v) => {
     lsSet("manoel_docs_links", v);
-    const rows = v.map(d=>({ id: d.id, titulo: d.titulo, url: d.url, descricao: d.descricao||"", obrigatorio: !!d.obrigatorio, payload: d, created_at: new Date().toISOString() }));
-    sbUpsert("docs", rows);
+    if (v.length === 0) {
+      const sb = getSupabase();
+      if (sb) { sb.from("docs").delete().neq("id", "__nunca__").then(() => {}); }
+    } else {
+      const rows = v.map(d => ({ id: d.id, titulo: d.titulo, url: d.url, descricao: d.descricao || "", obrigatorio: !!d.obrigatorio, payload: d, created_at: new Date().toISOString() }));
+      sbUpsert("docs", rows);
+    }
   },
-
+  deleteDoc: (id) => {
+    const atual = Store.getDocs().filter(x => x.id !== id);
+    Store.setDocs(atual);
+    sbDelete("docs", id);
+    return atual;
+  },
   // Sincroniza do Supabase para localStorage (chamado no load)
   syncFromSupabase: async () => {
     const sb = getSupabase();
