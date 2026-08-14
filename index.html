@@ -178,7 +178,7 @@ function mostrarComprovante(f){
           urlFinal = LINK_FIXO_TERMO + "?proto=" + encodeURIComponent(f.protocolo);
         } else {
           // outros documentos: tenta montar com base correta
-          if(d.url.startsWith('http')) urlFinal = d.url;
+          if(d.url.startsWith('http') || d.url.startsWith('data:') || d.url.startsWith('blob:')) urlFinal = d.url;
           else {
             const clean = d.url.replace(/^\.\//,'');
             urlFinal = "https://manch-tech.github.io/app-ficha/" + clean;
