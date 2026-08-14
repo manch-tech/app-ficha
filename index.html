@@ -42,7 +42,6 @@ body{font-family:Inter,system-ui,sans-serif;background:#f9fafb}
 </header>
 
 <main class="max-w-[1100px] mx-auto px-4 py-6">
-  <!-- INICIO -->
   <div id="tela-inicio" class="max-w-[460px] mx-auto">
     <div class="bg-white border rounded-[20px] p-6 shadow">
       <h2 class="font-bold text-lg">Ficha de Qualificacao</h2>
@@ -54,7 +53,6 @@ body{font-family:Inter,system-ui,sans-serif;background:#f9fafb}
     </div>
   </div>
 
-  <!-- FICHA -->
   <div id="tela-ficha" class="hidden max-w-[720px] mx-auto">
     <div class="mb-3 text-xs">Codigo validado: <span id="codigo-val" class="font-mono font-bold"></span> - <button onclick="trocarCodigo()" class="underline">Trocar</button></div>
     <div class="bg-white border rounded-[20px] shadow overflow-hidden">
@@ -76,7 +74,6 @@ body{font-family:Inter,system-ui,sans-serif;background:#f9fafb}
     </div>
   </div>
 
-  <!-- COMPROVANTE -->
   <div id="tela-comp" class="hidden max-w-[720px] mx-auto">
     <div class="bg-white border rounded-[20px] shadow p-6">
       <h2 class="font-bold text-lg">Comprovante - Protocolo <span id="proto" class="font-mono"></span></h2>
@@ -151,7 +148,7 @@ function enviar(){
   mostrarComprovante(ficha);
 }
 
-// BLOCO CORRIGIDO - SUBSTITUI O ANTIGO QUE DAVA 404
+// BOTAO PRETO TRAVADO NO LINK QUE JA ABRE
 function mostrarComprovante(f){
   document.getElementById("tela-ficha").classList.add("hidden");
   document.getElementById("proto").textContent=f.protocolo;
@@ -169,35 +166,31 @@ function mostrarComprovante(f){
   let docs=[];
   try{ docs = Store.getDocs() || []; }catch(e){ docs=[]; }
 
-  function resolverUrl(url){
-    try{
-      if(url.startsWith('http')) return url;
-      const clean = url.replace(/^\.\//,'');
-      // FORÇA o caminho correto do seu projeto no GitHub Pages
-      const base = (typeof FICHA_URL !== 'undefined' && FICHA_URL) ? FICHA_URL : 'https://manch-tech.github.io/app-ficha/';
-      // se ja vier com ficha/, usa direto
-      return new URL(clean, base).href;
-    }catch{
-      return 'https://manch-tech.github.io/app-ficha/' + url.replace(/^\.\//,'');
-    }
-  }
+  const LINK_FIXO_TERMO = "https://manch-tech.github.io/app-ficha/ficha/termo.html";
 
   if(docs.length){
     document.getElementById("docs-area").innerHTML=`
       <h3 class="font-bold text-sm">Proximas Fases - Documentos para Imprimir</h3>
       <p class="text-xs text-zinc-500 mt-1">Baixe, preencha, assine e envie de volta via WhatsApp junto com o protocolo.</p>
       <div class="mt-3 space-y-2">${docs.map(d=>{
-        const urlCorrigida = resolverUrl(d.url) + (d.url.includes('termo') ? '?proto=' + encodeURIComponent(f.protocolo) : '');
+        let urlFinal;
+        if(d.url.includes('termo.html') || d.titulo.toLowerCase().includes('termo')){
+          urlFinal = LINK_FIXO_TERMO + "?proto=" + encodeURIComponent(f.protocolo);
+        } else {
+          // outros documentos: tenta montar com base correta
+          if(d.url.startsWith('http')) urlFinal = d.url;
+          else {
+            const clean = d.url.replace(/^\.\//,'');
+            urlFinal = "https://manch-tech.github.io/app-ficha/" + clean;
+          }
+        }
         return `<div class="flex justify-between items-center border rounded-xl p-3 text-sm">
           <div><b>${d.titulo}</b><div class="text-xs text-zinc-500">${d.descricao||""}</div></div>
-          <a href="${urlCorrigida}" target="_blank" class="bg-zinc-900 text-white px-4 h-9 rounded-xl flex items-center text-xs">Baixar</a>
+          <a href="${urlFinal}" target="_blank" class="bg-zinc-900 text-white px-4 h-9 rounded-xl flex items-center text-xs">Baixar</a>
         </div>`;
       }).join("")}</div>
     `;
-  } else {
-    document.getElementById("docs-area").innerHTML = `<div class="text-xs text-zinc-500">Nenhum documento cadastrado no Supabase.</div>`;
   }
-
   document.getElementById("tela-comp").classList.remove("hidden");
 }
 
