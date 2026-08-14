@@ -129,30 +129,16 @@ const Store = {
 
   getDocs: () => {
     const docs = lsGet("manoel_docs_links", null);
-    if (docs === null) {
-      lsSet("manoel_docs_links", DOCS_PADRAO);
-      return DOCS_PADRAO;
-    }
-    if (Array.isArray(docs)) return docs;
+    if (docs && Array.isArray(docs) && docs.length > 0) return docs;
     lsSet("manoel_docs_links", DOCS_PADRAO);
     return DOCS_PADRAO;
   },
   setDocs: (v) => {
     lsSet("manoel_docs_links", v);
-    if (v.length === 0) {
-      const sb = getSupabase();
-      if (sb) { sb.from("docs").delete().neq("id", "__nunca__").then(() => {}); }
-    } else {
-      const rows = v.map(d => ({ id: d.id, titulo: d.titulo, url: d.url, descricao: d.descricao || "", obrigatorio: !!d.obrigatorio, payload: d, created_at: new Date().toISOString() }));
-      sbUpsert("docs", rows);
-    }
+    const rows = v.map(d=>({ id: d.id, titulo: d.titulo, url: d.url, descricao: d.descricao||"", obrigatorio: !!d.obrigatorio, payload: d, created_at: new Date().toISOString() }));
+    sbUpsert("docs", rows);
   },
-  deleteDoc: (id) => {
-    const atual = Store.getDocs().filter(x => x.id !== id);
-    Store.setDocs(atual);
-    sbDelete("docs", id);
-    return atual;
-  },
+
   // Sincroniza do Supabase para localStorage (chamado no load)
   syncFromSupabase: async () => {
     const sb = getSupabase();
@@ -169,12 +155,25 @@ const Store = {
       const lista = fichas.map(r=> r.payload).filter(Boolean);
       if(lista.length) lsSet("manoel_fichas_v2", lista);
     }
-    // docs
+    // docs - APENAS SUPABASE
     const docs = await sbFetchAll("docs");
+    try{ localStorage.removeItem("manoel_docs_links"); }catch{}
     if(docs && docs.length){
       const lista = docs.map(r=> r.payload || { id: r.id, titulo: r.titulo, url: r.url, descricao: r.descricao, obrigatorio: r.obrigatorio }).filter(Boolean);
-      if(lista.length) lsSet("manoel_docs_links", lista);
+      Store._docsCache = lista;
+    } else {
+      // se supabase vazio, deixa vazio mesmo (nao recria padrao automatico)
+      if(docs && docs.length===0){
+        Store._docsCache = [];
+      } else if(!Store._docsLoaded){
+        // primeira vez sem supabase, usa padrao uma vez e salva
+        Store._docsCache = DOCS_PADRAO;
+        // salva no supabase
+        const rows = DOCS_PADRAO.map(d=>({ id: d.id, titulo: d.titulo, url: d.url, descricao: d.descricao||"", obrigatorio: !!d.obrigatorio, payload: d, created_at: new Date().toISOString() }));
+        sbUpsert("docs", rows);
+      }
     }
+    Store._docsLoaded = true;
     window.dispatchEvent(new Event("mp_sync"));
   }
 };
