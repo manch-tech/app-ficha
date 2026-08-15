@@ -24,13 +24,23 @@
 </style>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Manoel Pedra - Ficha de Qualificacao</title>
+<title>Manoel Pedra - Ficha</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./shared.js"></script>
 <style>
 body{font-family:Inter,system-ui,sans-serif;background:#f9fafb}
-@media print{@page{margin:10mm;size:A4}.no-print{display:none!important}body{background:white!important}}
+@media print{
+  @page{margin:8mm;size:A4}
+  body{background:white!important;margin:0!important;padding:0!important}
+  header,.no-print,#tela-inicio,#tela-ficha{display:none!important}
+  #tela-comp{display:block!important;box-shadow:none!important;border:none!important;padding:0!important;margin:0!important;max-width:100%!important}
+  #tela-comp .bg-white{box-shadow:none!important;border:none!important;padding:0!important}
+  #dados-comp{page-break-inside:avoid}
+  #declaracao-box{page-break-inside:avoid;margin-top:8px!important;padding:8px!important;font-size:10px!important}
+  #docs-area{page-break-inside:avoid}
+  main{padding:0!important;margin:0!important}
+}
 </style>
 </head>
 <body class="min-h-screen">
@@ -40,70 +50,68 @@ body{font-family:Inter,system-ui,sans-serif;background:#f9fafb}
     <a href="./adm.html" class="text-xs underline">Admin</a>
   </div>
 </header>
-
 <main class="max-w-[1100px] mx-auto px-4 py-6">
-  <!-- INICIO -->
   <div id="tela-inicio" class="max-w-[460px] mx-auto">
     <div class="bg-white border rounded-[20px] p-6 shadow">
       <h2 class="font-bold text-lg">Ficha de Qualificacao</h2>
-      <p class="text-xs text-zinc-500 mt-1">Digite o codigo MP-XXXX recebido via WhatsApp. Codigo validado no Supabase.</p>
+      <p class="text-xs text-zinc-500 mt-1">Digite o codigo MP-XXXX recebido via WhatsApp.</p>
       <input id="codigo" placeholder="MP-XXXX" class="mt-4 w-full h-[44px] border rounded-xl px-4 uppercase font-mono">
-      <div id="erro-codigo" class="hidden text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl p-2 mt-2"></div>
+      <div id="erro-codigo" class="hidden text-xs text-red-600 bg-red-50 border rounded-xl p-2 mt-2"></div>
       <button onclick="validar()" class="mt-3 w-full h-[44px] bg-[#ffbf00] rounded-xl font-bold">Validar e Continuar</button>
-      <div class="mt-3 text-center text-[11px] text-zinc-400">Sistema seguro - Supabase</div>
     </div>
   </div>
 
-  <!-- FICHA -->
   <div id="tela-ficha" class="hidden max-w-[720px] mx-auto">
     <div class="mb-3 text-xs">Codigo validado: <span id="codigo-val" class="font-mono font-bold"></span> - <button onclick="trocarCodigo()" class="underline">Trocar</button></div>
     <div class="bg-white border rounded-[20px] shadow overflow-hidden">
       <div class="p-6 border-b"><h2 class="font-bold">Ficha de Qualificacao - Preencha todos os campos *</h2></div>
       <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div class="sm:col-span-2"><label class="text-[11px] font-bold uppercase">Razao Social *</label><input id="razao" class="w-full h-10 border rounded-xl px-3"></div>
-        <div><label class="text-[11px] font-bold uppercase">CNPJ *</label><input id="cnpj" class="w-full h-10 border rounded-xl px-3 font-mono" oninput="this.value=formatarCNPJ(this.value)"></div>
+        <div><label class="text-[11px] font-bold uppercase">CNPJ * 14 digitos</label><input id="cnpj" maxlength="18" class="w-full h-10 border rounded-xl px-3 font-mono" oninput="this.value=formatarCNPJ(this.value)"><span id="cnpj-hint" class="text-[10px] text-zinc-400">Digite 14 numeros</span></div>
         <div><label class="text-[11px] font-bold uppercase">Responsavel *</label><input id="responsavel" class="w-full h-10 border rounded-xl px-3"></div>
-        <div><label class="text-[11px] font-bold uppercase">WhatsApp *</label><input id="zap" class="w-full h-10 border rounded-xl px-3 font-mono" oninput="this.value=formatarTelefone(this.value)"></div>
-        <div><label class="text-[11px] font-bold uppercase">Email</label><input id="email" class="w-full h-10 border rounded-xl px-3"></div>
-        <div class="sm:col-span-2"><label class="text-[11px] font-bold uppercase">Endereco da Obra *</label><input id="endereco" class="w-full h-10 border rounded-xl px-3"></div>
+        <div><label class="text-[11px] font-bold uppercase">WhatsApp * DDD+numero 11 digitos</label><input id="zap" maxlength="15" class="w-full h-10 border rounded-xl px-3 font-mono" oninput="this.value=formatarTelefone(this.value)"><span id="zap-hint" class="text-[10px] text-zinc-400">Ex: (47) 99206-9588 - 11 digitos</span></div>
+        <div><label class="text-[11px] font-bold uppercase">Email</label><input id="email" type="email" class="w-full h-10 border rounded-xl px-3"></div>
+        <div class="sm:col-span-2"><label class="text-[11px] font-bold uppercase">Endereco da Obra *</label><input id="enderecoObra" class="w-full h-10 border rounded-xl px-3" placeholder="Rua, numero, bairro, cidade"></div>
+        <div class="sm:col-span-2"><label class="text-[11px] font-bold uppercase">Endereco de Cobranca *</label><input id="enderecoCobranca" class="w-full h-10 border rounded-xl px-3" placeholder="Mesmo da obra ou outro para boleto/nota"><label class="flex gap-2 mt-2 text-[11px]"><input type="checkbox" id="mesmoEndereco" onchange="copiarEndereco()"> Mesmo endereco da obra</label></div>
         <div><label class="text-[11px] font-bold uppercase">Tipo Servico</label><select id="tipo" class="w-full h-10 border rounded-xl px-3 bg-white"><option>Reforma</option><option>Construcao</option><option>Manutencao</option></select></div>
         <div><label class="text-[11px] font-bold uppercase">Grupo Economico?</label><select id="grupo" class="w-full h-10 border rounded-xl px-3 bg-white"><option>Nao</option><option>Sim</option></select></div>
         <div id="grupo-qual-wrap" class="hidden sm:col-span-2"><label class="text-[11px] font-bold uppercase">Qual grupo?</label><input id="grupoQual" class="w-full h-10 border rounded-xl px-3"></div>
-        <div class="sm:col-span-2 mt-2 bg-amber-50 border border-amber-200 rounded-xl p-3 flex gap-2 text-xs"><input type="checkbox" id="decl"><label for="decl">Declaro que as informacoes sao verdadeiras, nao estou sendo influenciado por terceiros incluindo Grupo GPS, ciente da politica de conflito de interesses e autorizo verificacao dos dados (LGPD).</label></div>
+        <div class="sm:col-span-2 mt-2 bg-amber-50 border border-amber-200 rounded-xl p-3 flex gap-2 text-xs"><input type="checkbox" id="decl"><label for="decl">Declaro que as informacoes sao verdadeiras, nao estou sendo influenciado por terceiros incluindo Grupo GPS, ciente da politica de conflito e autorizo verificacao LGPD.</label></div>
         <div id="erro-ficha" class="hidden sm:col-span-2 text-xs text-red-600 bg-red-50 border rounded-xl p-2"></div>
         <div class="sm:col-span-2"><button onclick="enviar()" class="w-full h-[46px] bg-[#ffbf00] rounded-xl font-bold">Gerar Ficha e Enviar</button></div>
       </div>
     </div>
   </div>
 
-  <!-- COMPROVANTE -->
   <div id="tela-comp" class="hidden max-w-[720px] mx-auto">
     <div class="bg-white border rounded-[20px] shadow p-6">
       <h2 class="font-bold text-lg">Comprovante - Protocolo <span id="proto" class="font-mono"></span></h2>
       <div id="dados-comp" class="mt-4 grid grid-cols-2 gap-3 text-sm"></div>
-      <div class="mt-6 bg-zinc-50 border rounded-xl p-4 text-xs">
+      <div id="declaracao-box" class="mt-6 bg-zinc-50 border rounded-xl p-4 text-xs">
         <b>Declaracao Formal</b><br>
         Declaro para os devidos fins que as informacoes prestadas sao verdadeiras e de minha inteira responsabilidade. Nao estou sendo influenciado por terceiros incluindo empresas do Grupo GPS. Ciente da politica de conflito de interesses de IVALCKMANOELCHAGAS - CNPJ 52.699.100/0001-51. Autorizo tratamento dos dados para qualificacao nos termos da LGPD.
         <div class="mt-3 text-[11px] text-zinc-500">Assinatura digital validada via protocolo <span id="proto2" class="font-mono"></span></div>
       </div>
       <div class="no-print mt-4 grid grid-cols-2 gap-3">
         <button onclick="enviarZap()" class="h-[46px] bg-[#25D366] text-white rounded-xl font-bold">Enviar via WhatsApp</button>
-        <button onclick="window.print()" class="h-[46px] bg-zinc-900 text-white rounded-xl font-bold">Imprimir / Salvar PDF</button>
+        <button onclick="window.print()" class="h-[46px] bg-zinc-900 text-white rounded-xl font-bold">Imprimir / Salvar PDF - 1 folha</button>
       </div>
       <div id="docs-area" class="no-print mt-6 border-t pt-4"></div>
       <button onclick="location.reload()" class="no-print mt-4 text-xs underline">Voltar ao inicio</button>
     </div>
   </div>
 </main>
-
 <script>
 let codigoUsado="";
 let fichaAtual=null;
-
 document.getElementById("grupo").addEventListener("change", function(){
   document.getElementById("grupo-qual-wrap").classList.toggle("hidden", this.value==="Nao");
 });
-
+function copiarEndereco(){
+  if(document.getElementById("mesmoEndereco").checked){
+    document.getElementById("enderecoCobranca").value=document.getElementById("enderecoObra").value;
+  }
+}
 function validar(){
   const c = document.getElementById("codigo").value.trim().toUpperCase();
   const codigos = Store.getCodigos();
@@ -125,26 +133,38 @@ function trocarCodigo(){
   document.getElementById("tela-ficha").classList.add("hidden");
   document.getElementById("tela-inicio").classList.remove("hidden");
 }
+function validarCNPJ(cnpj){
+  const n=cnpj.replace(/\D/g,"");
+  return n.length===14;
+}
+function validarWhats(zap){
+  const n=zap.replace(/\D/g,"");
+  return n.length===11;
+}
 function enviar(){
   const razao=document.getElementById("razao").value.trim();
   const cnpj=document.getElementById("cnpj").value.trim();
   const responsavel=document.getElementById("responsavel").value.trim();
   const zap=document.getElementById("zap").value.trim();
   const email=document.getElementById("email").value.trim();
-  const endereco=document.getElementById("endereco").value.trim();
+  const enderecoObra=document.getElementById("enderecoObra").value.trim();
+  const enderecoCobranca=document.getElementById("enderecoCobranca").value.trim();
   const tipo=document.getElementById("tipo").value;
   const grupo=document.getElementById("grupo").value;
   const grupoQual=document.getElementById("grupoQual").value.trim();
   const decl=document.getElementById("decl").checked;
   const erro=document.getElementById("erro-ficha");
-  if(!razao||!cnpj||!responsavel||!zap||!endereco){
-    erro.textContent="Preencha todos obrigatorios *"; erro.classList.remove("hidden"); return;
-  }
-  if(cnpj.replace(/\D/g,"").length!==14){ erro.textContent="CNPJ invalido"; erro.classList.remove("hidden"); return; }
-  if(!decl){ erro.textContent="Aceite a declaracao"; erro.classList.remove("hidden"); return; }
+  if(!razao||razao.length<3){erro.textContent="Razao Social minimo 3 caracteres";erro.classList.remove("hidden");return;}
+  if(!validarCNPJ(cnpj)){erro.textContent="CNPJ invalido: precisa 14 numeros ex: 12.345.678/0001-90";erro.classList.remove("hidden");return;}
+  if(!responsavel||responsavel.length<3){erro.textContent="Responsavel minimo 3 caracteres";erro.classList.remove("hidden");return;}
+  if(!validarWhats(zap)){erro.textContent="WhatsApp invalido: precisa 11 numeros com DDD ex: (47) 99206-9588";erro.classList.remove("hidden");return;}
+  if(!enderecoObra||enderecoObra.length<5){erro.textContent="Endereco da Obra minimo 5 caracteres";erro.classList.remove("hidden");return;}
+  if(!enderecoCobranca||enderecoCobranca.length<5){erro.textContent="Endereco de Cobranca minimo 5 caracteres";erro.classList.remove("hidden");return;}
+  if(email && !email.includes("@")){erro.textContent="Email invalido";erro.classList.remove("hidden");return;}
+  if(!decl){erro.textContent="Aceite a declaracao";erro.classList.remove("hidden");return;}
   erro.classList.add("hidden");
   const protocolo=gerarProtocolo();
-  const ficha={protocolo, razao, cnpj, responsavel, whatsapp:zap, email, endereco, tipoServico:tipo, grupoEconomico:grupo, grupoQual, dataISO:new Date().toISOString(), dataHora:new Date().toLocaleString("pt-BR"), codigoUsado};
+  const ficha={protocolo,razao,cnpj,responsavel,whatsapp:zap,email,enderecoObra,enderecoCobranca,endereco:enderecoObra,tipoServico:tipo,grupoEconomico:grupo,grupoQual,dataISO:new Date().toISOString(),dataHora:new Date().toLocaleString("pt-BR"),codigoUsado};
   Store.setFichas([ficha, ...Store.getFichas()]);
   Store.setCodigos(Store.getCodigos().map(x=>x.codigo===codigoUsado?{...x,status:"usado",usadoEm:new Date().toISOString()}:x));
   fichaAtual=ficha;
@@ -159,26 +179,25 @@ function mostrarComprovante(f){
     <div><div class="text-[11px] uppercase text-zinc-400">CNPJ</div><span class="font-mono">${f.cnpj}</span></div>
     <div><div class="text-[11px] uppercase text-zinc-400">Responsavel</div>${f.responsavel}</div>
     <div><div class="text-[11px] uppercase text-zinc-400">WhatsApp</div><span class="font-mono">${f.whatsapp}</span></div>
-    <div class="col-span-2"><div class="text-[11px] uppercase text-zinc-400">Endereco</div>${f.endereco}</div>
+    <div class="col-span-2"><div class="text-[11px] uppercase text-zinc-400">Endereco Obra</div>${f.enderecoObra}</div>
+    <div class="col-span-2"><div class="text-[11px] uppercase text-zinc-400">Endereco Cobranca</div>${f.enderecoCobranca}</div>
     <div><div class="text-[11px] uppercase text-zinc-400">Tipo</div>${f.tipoServico}</div>
     <div><div class="text-[11px] uppercase text-zinc-400">Grupo</div>${f.grupoEconomico} ${f.grupoQual||""}</div>
   `;
   let docs=Store.getDocs()||[];
-  // filtra lixo data: base64 que quebra github
   docs=docs.filter(d=> !(d.url && d.url.startsWith('data:')));
   if(docs.length===0){
-    docs=[{titulo:'Termo de Declaração de Conflito - GPS', descricao:'Baixe, preencha, assine e envie de volta via WhatsApp', url:'https://manch-tech.github.io/app-ficha/ficha/termo.html?proto='+encodeURIComponent(f.protocolo)}];
+    docs=[{titulo:'Termo de Declaracao de Conflito - GPS',descricao:'Baixe, preencha, assine e envie via WhatsApp',url:'https://manch-tech.github.io/app-ficha/ficha/termo.html?proto='+encodeURIComponent(f.protocolo)}];
   }
   document.getElementById("docs-area").innerHTML=`
       <h3 class="font-bold text-sm">Proximas Fases - Documentos para Imprimir</h3>
       <p class="text-xs text-zinc-500 mt-1">Baixe, preencha, assine e envie de volta via WhatsApp junto com o protocolo.</p>
       <div class="mt-3 space-y-2">${docs.map(d=>`<div class="flex justify-between items-center border rounded-xl p-3 text-sm"><div><b>${d.titulo}</b><div class="text-xs text-zinc-500">${d.descricao||""}</div></div><a href="${d.url}" target="_blank" class="bg-zinc-900 text-white px-4 h-9 rounded-xl flex items-center text-xs">Baixar</a></div>`).join("")}</div>
     `;
-
   document.getElementById("tela-comp").classList.remove("hidden");
 }
 function enviarZap(){
-  const txt=`FICHA QUALIFICACAO - ${fichaAtual.razao} - CNPJ ${fichaAtual.cnpj} - Protocolo ${fichaAtual.protocolo} - Resp ${fichaAtual.responsavel} - End ${fichaAtual.endereco}`;
+  const txt=`FICHA QUALIFICACAO - ${fichaAtual.razao} - CNPJ ${fichaAtual.cnpj} - Protocolo ${fichaAtual.protocolo} - Resp ${fichaAtual.responsavel} - Obra ${fichaAtual.enderecoObra} - Cobranca ${fichaAtual.enderecoCobranca}`;
   window.open(`https://wa.me/${Store.getWhats()}?text=${encodeURIComponent(txt)}`,"_blank");
 }
 setTimeout(()=>Store.syncFromSupabase(),500);
