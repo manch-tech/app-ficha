@@ -1,6 +1,27 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
+<head><style>
+@font-face {
+  font-family: "Optimistic";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("/fonts/OptimisticAI_VF_Optimized.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Optimistic Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/OptimisticMono_W_TextRegular.woff2") format("woff2");
+}
+:where(html) {
+  font-family: "Optimistic", system-ui, sans-serif;
+}
+:where(code, pre, kbd, samp) {
+  font-family: "Optimistic Mono", ui-monospace, monospace;
+}
+</style>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Admin - Manoel Pedra - Completo</title>
@@ -9,17 +30,19 @@
 <script src="./shared.js"></script>
 </head>
 <body class="bg-zinc-50 min-h-screen">
-  <div id="tela-login" class="min-h-screen flex items-center justify-center bg-zinc-900 p-4 fixed inset-0 z-50">
-    <div class="bg-white rounded-[20px] p-8 max-w-[360px] w-full shadow-2xl">
-      <h2 class="font-bold text-lg">Acesso Restrito - Admin</h2>
-      <p class="text-xs text-zinc-500 mt-1">Manoel Pedra - Ficha - Digite email e senha</p>
-      <input id="login-email" placeholder="Email" type="email" class="mt-4 w-full h-11 border rounded-xl px-4 text-sm">
-      <input id="login-senha" placeholder="Senha" type="password" class="mt-2 w-full h-11 border rounded-xl px-4 text-sm">
-      <div id="login-erro" class="hidden mt-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl p-2"></div>
-      <button onclick="fazerLogin()" class="mt-3 w-full h-11 bg-zinc-900 text-white rounded-xl font-bold">Entrar</button>
-    </div>
+
+<div id="tela-login" class="min-h-screen flex items-center justify-center bg-zinc-900 p-4">
+  <div class="bg-white rounded-[20px] p-8 max-w-[360px] w-full shadow-2xl">
+    <h2 class="font-bold text-lg">Acesso Restrito - Admin</h2>
+    <p class="text-xs text-zinc-500 mt-1">Manoel Pedra - Digite email e senha</p>
+    <input id="login-email" placeholder="Email" type="email" class="mt-4 w-full h-11 border rounded-xl px-4 text-sm">
+    <input id="login-senha" placeholder="Senha" type="password" class="mt-2 w-full h-11 border rounded-xl px-4 text-sm">
+    <div id="login-erro" class="hidden mt-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl p-2"></div>
+    <button onclick="fazerLogin()" class="mt-3 w-full h-11 bg-zinc-900 text-white rounded-xl font-bold">Entrar</button>
+    <div class="mt-3 text-[11px] text-zinc-400 text-center">Altere email e senha no inicio do arquivo adm.html - linha ADMIN_EMAIL / ADMIN_SENHA</div>
   </div>
-  <div id="conteudo-admin" class="hidden">
+</div>
+<div id="conteudo-admin" class="hidden">
 <header class="bg-white border-b p-4 flex justify-between sticky top-0"><b>Painel Administrativo - Manoel Pedra - Supabase ON - Completo</b><a href="./index.html" class="text-xs underline">Site cliente</a></header>
 <main class="max-w-[1000px] mx-auto p-4">
   <div class="flex gap-2 mb-4 overflow-auto">
@@ -50,7 +73,7 @@
 
   <div id="aba-docs" class="hidden bg-white border rounded-xl p-5">
     <h3 class="font-bold">Documentos - Proximas Fases (cliente imprime)</h3>
-    <p class="text-xs text-zinc-500 mt-1">Esses documentos aparecem no comprovante para o cliente baixar e imprimir. AGORA SOMENTE SUPABASE.</p>
+    <p class="text-xs text-zinc-500 mt-1">Esses documentos aparecem no comprovante para o cliente baixar e imprimir.</p>
     <div id="lista-docs" class="mt-4 space-y-2"></div>
     <div class="mt-4 border-t pt-4">
       <h4 class="font-bold text-sm">Adicionar novo documento</h4>
@@ -66,7 +89,7 @@
     <div class="mt-3"><label class="text-xs font-bold uppercase">WhatsApp de recebimento (somente numeros)</label><div class="flex gap-2 mt-1"><input id="whats-config" class="flex-1 h-10 border rounded-xl px-3 font-mono"><button onclick="salvarWhats()" class="h-10 px-4 border rounded-xl text-sm">Salvar</button></div></div>
     <div class="mt-4 text-xs text-zinc-500">Supabase URL: https://pirpitolwdgzildiawdr.supabase.co - Sincronizando automatico</div>
   </div>
-</main>
+</main></div>
 <script>
 let abaAtual="gerar";
 function mostrarAba(nome){
@@ -92,8 +115,8 @@ function renderCodigos(){
   document.getElementById("qtd-cod").textContent=codigos.length;
   document.getElementById("lista-cod").innerHTML=codigos.map(c=>`<div class="flex justify-between border-b py-2"><span>${c.codigo} - ${c.empresa||""} - ${new Date(c.data).toLocaleString("pt-BR")} - ${c.status}</span><button onclick="delCod('${c.codigo}')" class="text-red-600">Excluir</button></div>`).join("")||"Nenhum codigo - sincronizando Supabase...";
 }
-function delCod(c){ if(confirm("Excluir "+c+"?")){ Store.deleteCodigo(c); renderCodigos(); } }
-function limparCodigos(){ if(confirm("Excluir todos os codigos?")){ Store.setCodigos([]); renderCodigos(); } }
+async function delCod(c){ if(confirm("Excluir "+c+"?")){ await Store.deleteCodigo(c); renderCodigos(); } }
+async function limparCodigos(){ if(confirm("Excluir todos os codigos?")){ await Store.clearCodigos(); renderCodigos(); } }
 function renderFichas(){
   const busca=document.getElementById("busca-ficha").value.toLowerCase();
   let fichas=Store.getFichas();
@@ -102,79 +125,26 @@ function renderFichas(){
   document.getElementById("lista-ficha").innerHTML=fichas.map(f=>`<div class="border-b py-2"><b class="font-mono">${f.protocolo}</b> - ${f.razao} - ${f.cnpj} - ${f.responsavel} - ${f.whatsapp} - ${f.dataHora}<br><button onclick="verFicha('${f.protocolo}')" class="text-blue-600 underline text-xs">Ver detalhes</button> <button onclick="delFicha('${f.protocolo}')" class="text-red-600 underline text-xs ml-2">Excluir</button></div>`).join("")||"Nenhuma ficha";
 }
 function verFicha(proto){ const f=Store.getFichas().find(x=>x.protocolo===proto); if(f) alert(JSON.stringify(f,null,2)); }
-function delFicha(proto){ if(confirm("Excluir ficha "+proto+"?")){ Store.setFichas(Store.getFichas().filter(x=>x.protocolo!==proto)); renderFichas(); } }
-
+async function delFicha(proto){ if(confirm("Excluir ficha "+proto+"?")){ await Store.deleteFicha(proto); renderFichas(); } }
 function renderDocs(){
   const docs=Store.getDocs()||[];
   if(!Store._docsLoaded){
     document.getElementById("lista-docs").innerHTML="Carregando do Supabase...";
     return;
   }
-  if(docs.length===0){
-    document.getElementById("lista-docs").innerHTML=`<div class='text-xs text-zinc-500 p-3 border border-dashed rounded-xl'>Nenhum documento no Supabase<br><button onclick="restaurarPadrao()" class="mt-2 h-8 px-3 bg-[#ffbf00] rounded-full text-xs font-bold">Restaurar Termo Padrão (. /ficha/termo.html)</button></div>`;
-    return;
-  }
-  const temLixo = docs.some(d=>d.url && d.url.startsWith('data:'));
-  let htmlExtra = '';
-  if(temLixo){
-    htmlExtra = `<div class="mb-3 bg-red-50 border border-red-200 rounded-xl p-3 text-xs"><b>Detectado arquivo gigante (data:base64)</b> - isso quebra a tela.<br><button onclick="limparLixo()" class="mt-2 h-8 px-3 bg-red-600 text-white rounded-full text-xs">Limpar TODOS arquivos base64 gigantes</button></div>`;
-  }
-  document.getElementById("lista-docs").innerHTML= htmlExtra + docs.map(d=>{
-    let urlMostrar = d.url;
-    let tamanho = '';
-    if(d.url && d.url.startsWith('data:')){
-      const kb = Math.round(d.url.length/1024);
-      tamanho = ` (ARQUIVO GIGANTE ${kb}KB - vai quebrar)`;
-      urlMostrar = d.url.substring(0,60) + '... [truncado]';
-    } else if(d.url && d.url.length>80){
-      urlMostrar = d.url.substring(0,80) + '...';
-    }
-    return `<div class="flex justify-between border rounded-xl p-3"><div class="flex-1 mr-2"><b>${d.titulo}</b><div class="text-xs text-zinc-500 break-all">${d.descricao||""}<br><span class="font-mono text-[11px]">${urlMostrar}${tamanho}</span></div></div><button onclick="delDoc('${d.id}')" class="text-red-600 text-xs shrink-0">Excluir</button></div>`;
-  }).join("");
+  document.getElementById("lista-docs").innerHTML=docs.map(d=>`<div class="flex justify-between border rounded-xl p-3"><div><b>${d.titulo}</b><div class="text-xs text-zinc-500">${d.descricao||""} - ${d.url}</div></div><button onclick="delDoc('${d.id}')" class="text-red-600 text-xs">Excluir</button></div>`).join("")||"<div class='text-xs text-zinc-500 p-3'>Nenhum documento - adicione um novo abaixo (fica salvo so no Supabase)</div>";
 }
-
-async function limparLixo(){
-  if(!confirm('Apagar TODOS os documentos que começam com data: (base64 gigante)?')) return;
-  const docs = Store.getDocs()||[];
-  const filtrados = docs.filter(d=> !(d.url && d.url.startsWith('data:')) );
-  await Store.setDocs(filtrados);
-  renderDocs();
-  alert('Lixo limpo! Agora clique em Restaurar Termo Padrão');
-}
-
-async function restaurarPadrao(){
-  if(!confirm('Restaurar termo padrão no Supabase para ./ficha/termo.html ?')) return;
-  const padrao = {id: "termo-gps-padrao", titulo: "Termo de Declaração de Conflito - GPS", url: "./ficha/termo.html", descricao: "Baixe, preencha, assine e envie de volta via WhatsApp", obrigatorio: true};
-  await Store.setDocs([padrao]);
-  renderDocs();
-  alert("Restaurado! Agora o botão Baixar vai usar https://manch-tech.github.io/app-ficha/ficha/termo.html");
-}
-async function addDoc(){
+function addDoc(){
   const titulo=document.getElementById("doc-titulo").value.trim();
   const url=document.getElementById("doc-url").value.trim();
   const desc=document.getElementById("doc-desc").value.trim();
   if(!titulo||!url){ alert("Titulo e URL obrigatorios"); return; }
   const doc={id:"doc-"+Date.now(), titulo, url, descricao:desc, obrigatorio:true};
-  const lista = [...(Store.getDocs()||[]), doc];
-  console.log("Salvando no Supabase:", lista);
-  try{
-    await Store.setDocs(lista);
-    document.getElementById("doc-titulo").value=""; document.getElementById("doc-url").value=""; document.getElementById("doc-desc").value="";
-    renderDocs();
-    alert("Salvo no Supabase!");
-  }catch(e){
-    alert("Erro ao salvar: "+e.message);
-    console.error(e);
-  }
+  Store.setDocs([...Store.getDocs(), doc]);
+  document.getElementById("doc-titulo").value=""; document.getElementById("doc-url").value=""; document.getElementById("doc-desc").value="";
+  renderDocs();
 }
-async function delDoc(id){ 
-  if(!confirm('Excluir este documento?')) return;
-  if(confirm('Apagar DIRETO do Supabase? Nao volta mais.')){
-    await Store.deleteDoc(id); 
-    renderDocs(); 
-  }
-}
-
+function delDoc(id){ Store.setDocs(Store.getDocs().filter(d=>d.id!==id)); renderDocs(); }
 function salvarWhats(){ const v=document.getElementById("whats-config").value.replace(/\D/g,""); Store.setWhats(v); alert("Salvo"); }
 document.getElementById("whats-config").value=Store.getWhats();
 setTimeout(()=>{ Store.syncFromSupabase().then(()=>{renderCodigos(); renderFichas(); renderDocs();}); },800);
@@ -182,30 +152,48 @@ renderCodigos(); renderFichas(); renderDocs();
 window.addEventListener("mp_sync", ()=>{renderCodigos(); renderFichas(); renderDocs();});
 </script>
 
-</div>
-
 <script>
-  const ADMIN_EMAIL = "manchtec@gmail.com";
-  const ADMIN_SENHA = "Pedra@2026";
-  
-  function fazerLogin() {
-    const e = document.getElementById("login-email").value.trim().toLowerCase();
-    const s = document.getElementById("login-senha").value;
-    const erro = document.getElementById("login-erro");
-    if (e === ADMIN_EMAIL.toLowerCase() && s === ADMIN_SENHA) {
-      localStorage.setItem("mp_admin_logado", "1");
-      document.getElementById("tela-login").classList.add("hidden");
-      document.getElementById("conteudo-admin").classList.remove("hidden");
-    } else {
-      erro.textContent = "Email ou senha incorretos";
-      erro.classList.remove("hidden");
-    }
+// === CONFIGURE AQUI SEU EMAIL E SENHA ===
+const ADMIN_EMAIL = "manoel@manoelpedra.com.br";
+const ADMIN_SENHA = "Pedra@2024";
+// =========================================
+
+function fazerLogin(){
+  const email = document.getElementById("login-email").value.trim().toLowerCase();
+  const senha = document.getElementById("login-senha").value;
+  const erro = document.getElementById("login-erro");
+  if(email===ADMIN_EMAIL.toLowerCase() && senha===ADMIN_SENHA){
+    localStorage.setItem("mp_admin_logado","1");
+    mostrarAdmin();
+  } else {
+    erro.textContent = "Email ou senha incorretos";
+    erro.classList.remove("hidden");
   }
-  if (localStorage.getItem("mp_admin_logado") === "1") {
-    document.getElementById("tela-login").classList.add("hidden");
-    document.getElementById("conteudo-admin").classList.remove("hidden");
+}
+function mostrarAdmin(){
+  document.getElementById("tela-login").classList.add("hidden");
+  document.getElementById("conteudo-admin").classList.remove("hidden");
+}
+function fazerLogout(){
+  localStorage.removeItem("mp_admin_logado");
+  location.reload();
+}
+// verifica se ja logado
+if(localStorage.getItem("mp_admin_logado")==="1"){
+  setTimeout(mostrarAdmin, 100);
+}
+// adiciona botao sair no header dinamicamente
+setTimeout(()=>{
+  const header = document.querySelector("#conteudo-admin header");
+  if(header){
+    const btn = document.createElement("button");
+    btn.textContent="Sair";
+    btn.className="text-xs underline ml-3";
+    btn.onclick=fazerLogout;
+    header.appendChild(btn);
   }
+}, 500);
 </script>
 
-</body>
+<script>(function(){var loc=location.href.replace(/#.*$/,"");var ATTR_NAMES=["data-product-id","data-productid","data-product_id","product-id","productid","product_id","data-source-entity-id","source-entity-id","source_entity_id","data-product","data-metadata","data-meta"];var DATASET_KEYS=["productId","productid","product_id","sourceEntityId","sourceentityid","source_entity_id","product","metadata","meta"];function readProductId(value){if(typeof value!=="string"||value.length===0)return null;if(/^[0-9]{6,}$/.test(value))return value;var match=value.match(/(?:product(?:_|-)?id|source(?:_|-)?entity(?:_|-)?id)["'=:\s]+([0-9]{6,})/i);return match?match[1]:null}function extractProductId(start){for(var node=start;node&&node!==document.body;node=node.parentElement){for(var i=0;i<ATTR_NAMES.length;i++){var attrValue=node.getAttribute&&node.getAttribute(ATTR_NAMES[i]);var attrProductId=readProductId(attrValue);if(attrProductId)return attrProductId}var dataset=node.dataset||null;if(dataset){for(var j=0;j<DATASET_KEYS.length;j++){var dataValue=dataset[DATASET_KEYS[j]];var dataProductId=readProductId(dataValue);if(dataProductId)return dataProductId}}}return null}function isInlineMediaSlotElement(node){return !!(node&&node.getAttribute&&node.getAttribute("data-clippy-inline-media-slot")!==null)}function findInlineMediaSlot(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(isInlineMediaSlotElement(node))return node}return null}function readInlineMediaUrl(node){if(!node)return null;return node.getAttribute&&((node.getAttribute("data-clippy-inline-media-url")||node.getAttribute("data-url")||node.getAttribute("data_url")))||node.href||null}function stripHash(url){return String(url).replace(/#.*$/,"")}function urlsMatch(a,b){if(!a||!b)return false;try{return stripHash(new URL(a,loc).href)===stripHash(new URL(b,loc).href)}catch(_){return stripHash(a)===stripHash(b)}}function isFirstPartyReelUrl(value){try{var url=new URL(value,loc);if(url.protocol!=="https:")return false;var host=url.hostname.toLowerCase();var supported=host==="instagram.com"||host.endsWith(".instagram.com")||host==="facebook.com"||host.endsWith(".facebook.com");return supported&&/\/reels?\//i.test(url.pathname)}catch(_){return false}}function isInlineMediaUrlClick(node,href){var slot=findInlineMediaSlot(node);if(!slot)return false;var slotUrl=readInlineMediaUrl(slot);if(slotUrl)return urlsMatch(href,slotUrl);return isFirstPartyReelUrl(href)}function findDataHref(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(node.getAttribute){var href=node.getAttribute("data-href")||node.getAttribute("data-url");if(href)return{href:href,node:node}}}return null}var nativeOpen=window.open;window.open=function(url){if(parent!==window&&typeof url==="string"&&/^https?:\/\//.test(url)){parent.postMessage({type:"ecto:usercontent-link-click",href:url},"*");return null}return nativeOpen?nativeOpen.apply(window,arguments):null};document.addEventListener("click",function(e){var target=e.target instanceof Element?e.target:null;if(!target)return;if(parent===window)return;var a=target.closest?target.closest("a[href]"):null;if(a&&a.href&&/^https?:\/\//.test(a.href)&&a.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(a,a.href))return;var productId=extractProductId(target)||extractProductId(a);if(productId){e.preventDefault();parent.postMessage({type:"ecto-artifact-link-click",productId:productId},"*");return}e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:a.href},"*");return}var dataHref=findDataHref(target);if(dataHref&&/^https?:\/\//.test(dataHref.href)&&dataHref.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(dataHref.node,dataHref.href))return;e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:dataHref.href},"*")}},true)})();</script><script>(function(){var FOCUS_TYPE="ecto:artifact-focus-request";var CLOSE_TYPE="ecto:artifact-close-request";function focusArtifactDocument(){var body=document.body;if(!body)return;try{window.focus();}catch(e){}if(!body.hasAttribute("tabindex"))body.setAttribute("tabindex","-1");try{body.focus({preventScroll:true});}catch(e){try{body.focus();}catch(e2){}}}window.addEventListener("message",function(event){if(event.source!==window.parent)return;var data=event.data;if(!data||typeof data!=="object"||data.type!==FOCUS_TYPE)return;if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",focusArtifactDocument,{once:true});return;}focusArtifactDocument();});window.addEventListener("keydown",function(event){if(event.key!=="Escape")return;window.setTimeout(function(){if(event.defaultPrevented)return;window.parent.postMessage({type:CLOSE_TYPE},"*");},0);});})();</script></body>
 </html>
