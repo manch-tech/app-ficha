@@ -80,8 +80,18 @@ async function sbUpsert(table, rows){
 }
 async function sbDelete(table, id){
   const sb = getSupabase();
-  if(!sb) return;
-  try{ await sb.from(table).delete().eq('id', id); }catch(e){ console.warn("Supabase delete erro", e); }
+  if(!sb) return {error: 'no sb'};
+  try{
+    const {error} = await sb.from(table).delete().eq('id', id);
+    if(error){
+      console.warn("Supabase delete erro", table, id, error);
+      if(error.code==='42501' || error.message.includes('policy') || error.message.includes('RLS')){
+        alert("ERRO RLS Supabase: sem permissão para excluir em "+table+". Rode o SQL de correção no Supabase.");
+      }
+      return {error};
+    }
+    return {ok:true};
+  }catch(e){ console.warn("Supabase delete erro", e); return {error:e}; }
 }
 async function sbFetchAll(table){
   const sb = getSupabase();
@@ -94,6 +104,7 @@ async function sbFetchAll(table){
 }
 
 
+
 const Store = {
   _docsCache: [],
   _docsLoaded: false,
@@ -103,6 +114,11 @@ const Store = {
     lsSet("manoel_codigos_v2", v);
     const rows = v.map(c=>({ id: c.codigo, codigo: c.codigo, payload: c, created_at: c.data || new Date().toISOString() }));
     sbUpsert("codigos", rows);
+    // Se ficou vazio, limpa supabase também
+    if(v.length===0){
+      const sb = getSupabase();
+      if(sb){ sb.from("codigos").delete().neq("id","__nunca__").then(()=>{}).catch(()=>{}); }
+    }
   },
   deleteCodigo: (codigo) => {
     const atual = Store.getCodigos().filter(x=>x.codigo!==codigo);
@@ -110,12 +126,36 @@ const Store = {
     sbDelete("codigos", codigo);
     return atual;
   },
+  clearCodigos: async () => {
+    lsSet("manoel_codigos_v2", []);
+    const sb = getSupabase();
+    if(sb){
+      try{ await sb.from("codigos").delete().neq("id","__nunca__"); }catch(e){ console.warn("clear codigos erro", e); }
+    }
+  },
 
   getFichas: () => lsGet("manoel_fichas_v2", []),
   setFichas: (v) => {
     lsSet("manoel_fichas_v2", v);
     const rows = v.map(f=>({ id: f.protocolo, protocolo: f.protocolo, payload: f, created_at: f.dataISO || new Date().toISOString() }));
     sbUpsert("fichas", rows);
+    if(v.length===0){
+      const sb = getSupabase();
+      if(sb){ sb.from("fichas").delete().neq("id","__nunca__").then(()=>{}).catch(()=>{}); }
+    }
+  },
+  deleteFicha: (protocolo) => {
+    const atual = Store.getFichas().filter(x=>x.protocolo!==protocolo);
+    lsSet("manoel_fichas_v2", atual);
+    sbDelete("fichas", protocolo);
+    return atual;
+  },
+  clearFichas: async () => {
+    lsSet("manoel_fichas_v2", []);
+    const sb = getSupabase();
+    if(sb){
+      try{ await sb.from("fichas").delete().neq("id","__nunca__"); }catch(e){ console.warn("clear fichas erro", e); }
+    }
   },
 
   getWhats: () => {
@@ -173,11 +213,15 @@ const Store = {
     if(codigos && codigos.length){
       const lista = codigos.map(r=> r.payload || { codigo: r.codigo || r.id, data: r.created_at, status: "disponivel" }).filter(Boolean);
       if(lista.length) lsSet("manoel_codigos_v2", lista);
+    } else if(codigos && codigos.length===0){
+      // supabase vazio, nao repopula
     }
     const fichas = await sbFetchAll("fichas");
     if(fichas && fichas.length){
       const lista = fichas.map(r=> r.payload).filter(Boolean);
       if(lista.length) lsSet("manoel_fichas_v2", lista);
+    } else if(fichas && fichas.length===0){
+      // supabase vazio, nao repopula
     }
     // docs - SOMENTE SUPABASE
     const docs = await sbFetchAll("docs");
@@ -187,11 +231,9 @@ const Store = {
       Store._docsCache = lista;
       Store._docsLoaded = true;
     } else if(docs && docs.length===0){
-      // supabase vazio - respeita, fica vazio mesmo
       Store._docsCache = [];
       Store._docsLoaded = true;
     } else {
-      // erro de fetch, se nunca carregou, usa padrao
       if(!Store._docsLoaded){
         Store._docsCache = [];
         Store._docsLoaded = true;
@@ -200,6 +242,7 @@ const Store = {
     window.dispatchEvent(new Event("mp_sync"));
   }
 };
+
 
 
 // tenta sync ao carregar (não bloqueia UI)
