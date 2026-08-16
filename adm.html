@@ -57,7 +57,12 @@
     <h3 class="font-bold">Gerar novo codigo de acesso</h3><p class="text-xs text-zinc-500 mt-1">Cada codigo unico e de uso unico. Salvo no Supabase.</p>
     <input id="empresa" placeholder="Empresa opcional Ex: CONSTRUTORA ALFA LTDA" class="mt-4 w-full h-10 border rounded-xl px-3">
     <button onclick="gerar()" class="mt-3 h-10 px-5 bg-[#ffbf00] rounded-xl font-bold">Gerar MP-XXXX</button>
-    <div id="gerado-box" class="hidden mt-4 bg-zinc-900 text-white p-4 rounded-xl"><div class="text-xs text-zinc-400">Codigo gerado</div><div id="codigo-gerado" class="font-mono text-2xl font-bold"></div><button onclick="copiarCodigo()" class="mt-2 bg-white text-black px-3 h-8 rounded-full text-xs">Copiar</button> <a id="zap-gerado" target="_blank" class="bg-[#25D366] text-white px-3 h-8 rounded-full text-xs inline-flex items-center">WhatsApp cliente</a></div>
+    <div id="gerado-box" class="hidden mt-4 bg-zinc-900 text-white p-4 rounded-xl">
+      <div class="text-xs text-zinc-400">Codigo gerado</div>
+      <div id="codigo-gerado" class="font-mono text-2xl font-bold"></div>
+      <button onclick="copiarCodigo()" class="mt-2 bg-white text-black px-3 h-8 rounded-full text-xs">Copiar</button>
+      <a id="zap-gerado" target="_blank" class="bg-[#25D366] text-white px-3 h-8 rounded-full text-xs inline-flex items-center">WhatsApp cliente</a>
+    </div>
   </div>
 
   <div id="aba-lista" class="hidden bg-white border rounded-xl p-5">
@@ -113,7 +118,11 @@ function copiarCodigo(){ navigator.clipboard.writeText(document.getElementById("
 function renderCodigos(){
   const codigos=Store.getCodigos();
   document.getElementById("qtd-cod").textContent=codigos.length;
-  document.getElementById("lista-cod").innerHTML=codigos.map(c=>`<div class="flex justify-between border-b py-2"><span>${c.codigo} - ${c.empresa||""} - ${new Date(c.data).toLocaleString("pt-BR")} - ${c.status}</span><button onclick="delCod('${c.codigo}')" class="text-red-600">Excluir</button></div>`).join("")||"Nenhum codigo - sincronizando Supabase...";
+  document.getElementById("lista-cod").innerHTML=codigos.map(c=>{
+    return `<div class="flex justify-between border-b py-2">
+      <span>${c.codigo} - ${c.empresa||""} - ${new Date(c.data).toLocaleString("pt-BR")} - ${c.status}</span>
+      <button onclick="delCod('${c.codigo}')" class="text-red-600">Excluir</button></div>`;
+  }).join("")||"Nenhum codigo - sincronizando Supabase...";
 }
 async function delCod(c){ if(confirm("Excluir "+c+"?")){ await Store.deleteCodigo(c); renderCodigos(); } }
 async function limparCodigos(){ if(confirm("Excluir todos os codigos?")){ await Store.clearCodigos(); renderCodigos(); } }
@@ -122,7 +131,11 @@ function renderFichas(){
   let fichas=Store.getFichas();
   if(busca) fichas=fichas.filter(f=> (f.razao||"").toLowerCase().includes(busca) || (f.protocolo||"").toLowerCase().includes(busca) || (f.cnpj||"").includes(busca));
   document.getElementById("qtd-ficha").textContent=Store.getFichas().length;
-  document.getElementById("lista-ficha").innerHTML=fichas.map(f=>`<div class="border-b py-2"><b class="font-mono">${f.protocolo}</b> - ${f.razao} - ${f.cnpj} - ${f.responsavel} - ${f.whatsapp} - ${f.dataHora}<br><button onclick="verFicha('${f.protocolo}')" class="text-blue-600 underline text-xs">Ver detalhes</button> <button onclick="delFicha('${f.protocolo}')" class="text-red-600 underline text-xs ml-2">Excluir</button></div>`).join("")||"Nenhuma ficha";
+  document.getElementById("lista-ficha").innerHTML=fichas.map(f=>{
+    return `<div class="border-b py-2"><b class="font-mono">${f.protocolo}</b> - ${f.razao} - ${f.cnpj} - ${f.responsavel} - ${f.whatsapp} - ${f.dataHora}<br>
+      <button onclick="verFicha('${f.protocolo}')" class="text-blue-600 underline text-xs">Ver detalhes</button>
+      <button onclick="delFicha('${f.protocolo}')" class="text-red-600 underline text-xs ml-2">Excluir</button></div>`;
+  }).join("")||"Nenhuma ficha";
 }
 function verFicha(proto){ const f=Store.getFichas().find(x=>x.protocolo===proto); if(f) alert(JSON.stringify(f,null,2)); }
 async function delFicha(proto){ if(confirm("Excluir ficha "+proto+"?")){ await Store.deleteFicha(proto); renderFichas(); } }
@@ -132,7 +145,11 @@ function renderDocs(){
     document.getElementById("lista-docs").innerHTML="Carregando do Supabase...";
     return;
   }
-  document.getElementById("lista-docs").innerHTML=docs.map(d=>`<div class="flex justify-between border rounded-xl p-3"><div><b>${d.titulo}</b><div class="text-xs text-zinc-500">${d.descricao||""} - ${d.url}</div></div><button onclick="delDoc('${d.id}')" class="text-red-600 text-xs">Excluir</button></div>`).join("")||"<div class='text-xs text-zinc-500 p-3'>Nenhum documento - adicione um novo abaixo (fica salvo so no Supabase)</div>";
+  document.getElementById("lista-docs").innerHTML=docs.map(d=>{
+    return `<div class="flex justify-between border rounded-xl p-3">
+      <div><b>${d.titulo}</b><div class="text-xs text-zinc-500">${d.descricao||""} - ${d.url}</div></div>
+      <button onclick="delDoc('${d.id}')" class="text-red-600 text-xs">Excluir</button></div>`;
+  }).join("")||"<div class='text-xs text-zinc-500 p-3'>Nenhum documento</div>";
 }
 function addDoc(){
   const titulo=document.getElementById("doc-titulo").value.trim();
@@ -154,8 +171,8 @@ window.addEventListener("mp_sync", ()=>{renderCodigos(); renderFichas(); renderD
 
 <script>
 // === CONFIGURE AQUI SEU EMAIL E SENHA ===
-const ADMIN_EMAIL = "manchtec@gmail.com";
-const ADMIN_SENHA = "Pedra@2026";
+const ADMIN_EMAIL = "manoel@manoelpedra.com.br";
+const ADMIN_SENHA = "Pedra@2024";
 // =========================================
 
 function fazerLogin(){
