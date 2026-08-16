@@ -1,3 +1,3 @@
-# app-ficha - Manoel Pedra Original + Supabase
+# app-ficha + Supabase
 URL: https://manch-tech.github.io/app-ficha/
 Supabase: https://pirpitolwdgzildiawdr.supabase.co
