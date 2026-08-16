@@ -139,6 +139,7 @@ function renderFichas(){
 }
 function verFicha(proto){ const f=Store.getFichas().find(x=>x.protocolo===proto); if(f) alert(JSON.stringify(f,null,2)); }
 async function delFicha(proto){ if(confirm("Excluir ficha "+proto+"?")){ await Store.deleteFicha(proto); renderFichas(); } }
+let docEditandoId = null;
 function renderDocs(){
   const docs=Store.getDocs()||[];
   if(!Store._docsLoaded){
@@ -146,22 +147,43 @@ function renderDocs(){
     return;
   }
   document.getElementById("lista-docs").innerHTML=docs.map(d=>{
-    return `<div class="flex justify-between border rounded-xl p-3">
+    return `<div class="flex justify-between border rounded-xl p-3 items-center">
       <div><b>${d.titulo}</b><div class="text-xs text-zinc-500">${d.descricao||""} - ${d.url}</div></div>
-      <button onclick="delDoc('${d.id}')" class="text-red-600 text-xs">Excluir</button></div>`;
+      <div class="flex gap-2">
+        <button onclick="editDoc('${d.id}')" class="h-8 w-8 rounded-full border flex items-center justify-center text-xs" title="Editar">✏️</button>
+        <button onclick="delDoc('${d.id}')" class="text-red-600 text-xs px-2">Excluir</button>
+      </div></div>`;
   }).join("")||"<div class='text-xs text-zinc-500 p-3'>Nenhum documento</div>";
 }
+function editDoc(id){
+  const doc = Store.getDocs().find(x=>x.id===id);
+  if(!doc) return;
+  document.getElementById("doc-titulo").value = doc.titulo;
+  document.getElementById("doc-url").value = doc.url;
+  document.getElementById("doc-desc").value = doc.descricao||"";
+  docEditandoId = id;
+  document.querySelector("#aba-docs button[onclick='addDoc()']").textContent = "Salvar Edição";
+  document.getElementById("doc-titulo").focus();
+}
+
 function addDoc(){
   const titulo=document.getElementById("doc-titulo").value.trim();
   const url=document.getElementById("doc-url").value.trim();
   const desc=document.getElementById("doc-desc").value.trim();
   if(!titulo||!url){ alert("Titulo e URL obrigatorios"); return; }
-  const doc={id:"doc-"+Date.now(), titulo, url, descricao:desc, obrigatorio:true};
-  Store.setDocs([...Store.getDocs(), doc]);
+  if(docEditandoId){
+    const docs = Store.getDocs().map(d=> d.id===docEditandoId ? {...d, titulo, url, descricao:desc} : d);
+    Store.setDocs(docs);
+    docEditandoId = null;
+    document.querySelector("#aba-docs button[onclick='addDoc()']").textContent = "Adicionar Documento";
+  } else {
+    const doc={id:"doc-"+Date.now(), titulo, url, descricao:desc, obrigatorio:true};
+    Store.setDocs([...Store.getDocs(), doc]);
+  }
   document.getElementById("doc-titulo").value=""; document.getElementById("doc-url").value=""; document.getElementById("doc-desc").value="";
   renderDocs();
 }
-function delDoc(id){ Store.setDocs(Store.getDocs().filter(d=>d.id!==id)); renderDocs(); }
+async function delDoc(id){ if(!confirm('Excluir este documento?')) return; await Store.deleteDoc(id); renderDocs(); }
 function salvarWhats(){ const v=document.getElementById("whats-config").value.replace(/\D/g,""); Store.setWhats(v); alert("Salvo"); }
 document.getElementById("whats-config").value=Store.getWhats();
 setTimeout(()=>{ Store.syncFromSupabase().then(()=>{renderCodigos(); renderFichas(); renderDocs();}); },800);
