@@ -84,9 +84,10 @@ body{font-family:Inter,system-ui,sans-serif;background:#f9fafb}
         Declaro para os devidos fins que as informações prestadas são verdadeiras e de minha inteira responsabilidade. Nao estou sendo influenciado por terceiros incluindo empresas do Grupo GPS. Ciente da política de conflito de interesses deste site e dos prestadores de serviços disponibilizados por essa plataforma. Autorizo tratamento dos dados para qualificação nos termos da LGPD.
         <div class="mt-3 text-[11px] text-zinc-500">Assinatura digital validada via protocolo <span id="proto2" class="font-mono"></span></div>
       </div>
-      <div class="no-print mt-4 grid grid-cols-2 gap-3">
-        <button onclick="enviarZap()" class="h-[46px] bg-[#25D366] text-white rounded-xl font-bold">Enviar via WhatsApp</button>
-        <button onclick="window.print()" class="h-[46px] bg-zinc-900 text-white rounded-xl font-bold">Imprimir / Salvar PDF</button>
+      <div class="no-print mt-4 grid grid-cols-2 gap-3" id="area-botoes">
+        <button id="btn-zap" onclick="enviarZap()" class="h-[46px] bg-[#25D366] text-white rounded-xl font-bold">Enviar via WhatsApp</button>
+        <button id="btn-email" onclick="enviarEmail()" class="hidden h-[46px] bg-blue-600 text-white rounded-xl font-bold">Enviar por E-mail</button>
+        <button id="btn-print" onclick="window.print()" class="h-[46px] bg-zinc-900 text-white rounded-xl font-bold">Imprimir / Salvar PDF</button>
       </div>
       <div id="docs-area" class="no-print mt-6 border-t pt-4"></div>
       <button onclick="location.reload()" class="no-print mt-4 text-xs underline">Voltar ao inicio</button>
@@ -184,8 +185,27 @@ function mostrarComprovante(f){
     <div><div class="text-[11px] uppercase text-zinc-400">Relação Grupo / Empresa</div>${f.grupoEconomico}${f.grupoQual ? " - " + f.grupoQual : ""}</div>
   `;
   const docs=Store.getDocs();
-  if(docs.length){
-    document.getElementById("docs-area").innerHTML=`
+  const areaDocs = document.getElementById("docs-area");
+  const temRelacao = (f.grupoEconomico||"").toLowerCase().startsWith("s"); // Sim
+  const btnZap = document.getElementById("btn-zap");
+  const btnEmail = document.getElementById("btn-email");
+  const btnPrint = document.getElementById("btn-print");
+  if(temRelacao){
+    areaDocs.innerHTML=`
+      <div class="bg-red-50 border border-red-200 rounded-[16px] p-4">
+        <h3 class="font-bold text-sm text-red-800">Análise de Conflito de Interesses - REPROVADO</h3>
+        <p class="text-xs text-red-700 mt-2 leading-relaxed">Você informou que <b>tem relação direta ou indireta com o grupo citado ou empresa (GPS)</b>. Por política de conflito de interesses, os documentos das próximas fases <b>não serão disponibilizados</b> e a qualificação não poderá prosseguir por este canal.</p>
+        <p class="text-[11px] text-zinc-500 mt-2">Protocolo ${f.protocolo} registrado para análise. Envie por e-mail para registro.</p>
+      </div>
+    `;
+    // Bloqueia WhatsApp, libera apenas E-mail
+    if(btnZap){ btnZap.classList.add("hidden"); btnZap.disabled = true; }
+    if(btnEmail){ btnEmail.classList.remove("hidden"); }
+    if(btnPrint){ btnPrint.classList.remove("hidden"); }
+  } else if(docs.length){ // APROVADO - libera WhatsApp, esconde Email
+    if(btnZap){ btnZap.classList.remove("hidden"); btnZap.disabled = false; }
+    if(btnEmail){ btnEmail.classList.add("hidden"); }
+    areaDocs.innerHTML=`
       <h3 class="font-bold text-sm">Proximas Fases - Documentos para Imprimir</h3>
       <p class="text-xs text-zinc-500 mt-1">Clique para abrir direto na impressora / salvar em PDF.</p>
       <div class="mt-3 space-y-2">${docs.map(d=>{
@@ -195,8 +215,34 @@ function mostrarComprovante(f){
       </div>`;
     }).join("")}</div>
     `;
+  } else {
+    areaDocs.innerHTML="";
+    if(btnZap){ btnZap.classList.remove("hidden"); btnZap.disabled = false; }
+    if(btnEmail){ btnEmail.classList.add("hidden"); }
   }
   document.getElementById("tela-comp").classList.remove("hidden");
+}
+function enviarEmail(){
+  const assunto = `FICHA QUALIFICACAO - REPROVADA - CONFLITO - ${fichaAtual.protocolo} - ${fichaAtual.razao}`;
+  const corpo = `Protocolo: ${fichaAtual.protocolo}
+Razao: ${fichaAtual.razao}
+CNPJ: ${fichaAtual.cnpj}
+Responsavel: ${fichaAtual.responsavel}
+WhatsApp: ${fichaAtual.whatsapp}
+Endereco Obra: ${fichaAtual.endereco}
+Endereco Recebimento: ${fichaAtual.enderecoRecebimento}
+Tipo: ${fichaAtual.tipoServico}
+Relacao Grupo/Empresa: ${fichaAtual.grupoEconomico} - ${fichaAtual.grupoQual||""}
+Data: ${fichaAtual.dataHora}
+Codigo usado: ${fichaAtual.codigoUsado}
+
+Resultado: REPROVADO por conflito de interesses - declarou ter relacao direta ou indireta com o grupo citado/empresa GPS.
+
+Declaracao: Declaro para os devidos fins que as informacoes prestadas sao verdadeiras e de minha inteira responsabilidade. Nao estou sendo influenciado por terceiros incluindo empresas do Grupo GPS. Ciente da politica de conflito de interesses deste site e dos prestadores de servicos disponibilizados por essa plataforma. Autorizo tratamento dos dados para qualificacao nos termos da LGPD.
+`;
+  // Email de destino - use o mesmo do admin ou configure no Store
+  const emailDestino = "contato@manoelpedra.com.br,manoel@manoelpedra.com.br"; // edite aqui
+  window.location.href = `mailto:${emailDestino}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo)}`;
 }
 function enviarZap(){
   const txt=`FICHA QUALIFICACAO - ${fichaAtual.razao} - CNPJ ${fichaAtual.cnpj} - Protocolo ${fichaAtual.protocolo} - Resp ${fichaAtual.responsavel} - Obra ${fichaAtual.endereco} - Receb ${fichaAtual.enderecoRecebimento}`;
@@ -204,9 +250,8 @@ function enviarZap(){
 }
 setTimeout(()=>Store.syncFromSupabase(),500);
 </script>
-<script>(function(){var loc=location.href.replace(/#.*$/,"");var ATTR_NAMES=["data-product-id","data-productid","data-product_id","product-id","productid","product_id","data-source-entity-id","source-entity-id","source_entity_id","data-product","data-metadata","data-meta"];var DATASET_KEYS=["productId","productid","product_id","sourceEntityId","sourceentityid","source_entity_id","product","metadata","meta"];function readProductId(value){if(typeof value!=="string"||value.length===0)return null;if(/^[0-9]{6,}$/.test(value))return value;var match=value.match(/(?:product(?:_|-)?id|source(?:_|-)?entity(?:_|-)?id)["'=:\s]+([0-9]{6,})/i);return match?match[1]:null}function extractProductId(start){for(var node=start;node&&node!==document.body;node=node.parentElement){for(var i=0;i<ATTR_NAMES.length;i++){var attrValue=node.getAttribute&&node.getAttribute(ATTR_NAMES[i]);var attrProductId=readProductId(attrValue);if(attrProductId)return attrProductId}var dataset=node.dataset||null;if(dataset){for(var j=0;j<DATASET_KEYS.length;j++){var dataValue=dataset[DATASET_KEYS[j]];var dataProductId=readProductId(dataValue);if(dataProductId)return dataProductId}}}return null}function isInlineMediaSlotElement(node){return !!(node&&node.getAttribute&&node.getAttribute("data-clippy-inline-media-slot")!==null)}function findInlineMediaSlot(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(isInlineMediaSlotElement(node))return node}return null}function readInlineMediaUrl(node){if(!node)return null;return node.getAttribute&&((node.getAttribute("data-clippy-inline-media-url")||node.getAttribute("data-url")||node.getAttribute("data_url")))||node.href||null}function stripHash(url){return String(url).replace(/#.*$/,"")}function urlsMatch(a,b){if(!a||!b)return false;try{return stripHash(new URL(a,loc).href)===stripHash(new URL(b,loc).href)}catch(_){return stripHash(a)===stripHash(b)}}function isFirstPartyReelUrl(value){try{var url=new URL(value,loc);if(url.protocol!=="https:")return false;var host=url.hostname.toLowerCase();var supported=host==="instagram.com"||host.endsWith(".instagram.com")||host==="facebook.com"||host.endsWith(".facebook.com");return supported&&/\/reels?\//i.test(url.pathname)}catch(_){return false}}function isInlineMediaUrlClick(node,href){var slot=findInlineMediaSlot(node);if(!slot)return false;var slotUrl=readInlineMediaUrl(slot);if(slotUrl)return urlsMatch(href,slotUrl);return isFirstPartyReelUrl(href)}function findDataHref(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(node.getAttribute){var href=node.getAttribute("data-href")||node.getAttribute("data-url");if(href)return{href:href,node:node}}}return null}var nativeOpen=window.open;window.open=function(url){if(parent!==window&&typeof url==="string"&&/^https?:\/\//.test(url)){parent.postMessage({type:"ecto:usercontent-link-click",href:url},"*");return null}return nativeOpen?nativeOpen.apply(window,arguments):null};document.addEventListener("click",function(e){var target=e.target instanceof Element?e.target:null;if(!target)return;if(parent===window)return;var a=target.closest?target.closest("a[href]"):null;if(a&&a.href&&/^https?:\/\//.test(a.href)&&a.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(a,a.href))return;var productId=extractProductId(target)||extractProductId(a);if(productId){e.preventDefault();parent.postMessage({type:"ecto-artifact-link-click",productId:productId},"*");return}e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:a.href},"*");return}var dataHref=findDataHref(target);if(dataHref&&/^https?:\/\//.test(dataHref.href)&&dataHref.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(dataHref.node,dataHref.href))return;e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:dataHref.href},"*")}},true)})();</script><script>(function(){var FOCUS_TYPE="ecto:artifact-focus-request";var CLOSE_TYPE="ecto:artifact-close-request";function focusArtifactDocument(){var body=document.body;if(!body)return;try{window.focus();}catch(e){}if(!body.hasAttribute("tabindex"))body.setAttribute("tabindex","-1");try{body.focus({preventScroll:true});}catch(e){try{body.focus();}catch(e2){}}}window.addEventListener("message",function(event){if(event.source!==window.parent)return;var data=event.data;if(!data||typeof data!=="object"||data.type!==FOCUS_TYPE)return;if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",focusArtifactDocument,{once:true});return;}focusArtifactDocument();});window.addEventListener("keydown",function(event){if(event.key!=="Escape")return;window.setTimeout(function(){if(event.defaultPrevented)return;window.parent.postMessage({type:CLOSE_TYPE},"*");},0);});})();</script>
 
-<!-- POPUP AVISO LEGAL - REQUISITO OBRIGATORIO -->
+<!-- POPUP AVISO LEGAL -->
 <div id="popup-aviso" class="fixed inset-0 z-[9999] hidden">
   <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="fecharAviso()"></div>
   <div class="absolute inset-0 flex items-center justify-center p-4">
@@ -244,8 +289,10 @@ function fecharAviso(){
     return;
   }
   document.getElementById('popup-aviso').classList.add('hidden');
+  // Salva aceite como requisito obrigatório para acessar a ficha
   localStorage.setItem('mp_aviso_aceito','1');
   sessionStorage.setItem('mp_aviso_visto','1');
+  // Libera o campo de código
   document.getElementById('codigo')?.removeAttribute('disabled');
   document.querySelector('#tela-inicio button')?.removeAttribute('disabled');
 }
@@ -261,6 +308,7 @@ document.getElementById('check-aviso')?.addEventListener('change', function(){
     btn.classList.remove('bg-zinc-900','text-white');
   }
 });
+// REQUISITO OBRIGATÓRIO: bloqueia acesso à ficha até aceitar o aviso
 const _validarOriginal = validar;
 validar = function(){
   const aceito = localStorage.getItem('mp_aviso_aceito');
@@ -270,11 +318,14 @@ validar = function(){
   }
   _validarOriginal();
 };
+
+// Mostra o aviso automaticamente ao carregar a página (obrigatório)
 window.addEventListener('load', ()=>{
   setTimeout(()=>{
     const aceito = localStorage.getItem('mp_aviso_aceito');
     if(!aceito){
       mostrarAviso();
+      // bloqueia input até aceitar
       const input = document.getElementById('codigo');
       const btn = document.querySelector('#tela-inicio button');
       if(input){ input.setAttribute('disabled','true'); input.placeholder = 'Aceite o aviso para continuar'; }
@@ -284,5 +335,5 @@ window.addEventListener('load', ()=>{
 });
 </script>
 
-</body>
+<script>(function(){var loc=location.href.replace(/#.*$/,"");var ATTR_NAMES=["data-product-id","data-productid","data-product_id","product-id","productid","product_id","data-source-entity-id","source-entity-id","source_entity_id","data-product","data-metadata","data-meta"];var DATASET_KEYS=["productId","productid","product_id","sourceEntityId","sourceentityid","source_entity_id","product","metadata","meta"];function readProductId(value){if(typeof value!=="string"||value.length===0)return null;if(/^[0-9]{6,}$/.test(value))return value;var match=value.match(/(?:product(?:_|-)?id|source(?:_|-)?entity(?:_|-)?id)["'=:\s]+([0-9]{6,})/i);return match?match[1]:null}function extractProductId(start){for(var node=start;node&&node!==document.body;node=node.parentElement){for(var i=0;i<ATTR_NAMES.length;i++){var attrValue=node.getAttribute&&node.getAttribute(ATTR_NAMES[i]);var attrProductId=readProductId(attrValue);if(attrProductId)return attrProductId}var dataset=node.dataset||null;if(dataset){for(var j=0;j<DATASET_KEYS.length;j++){var dataValue=dataset[DATASET_KEYS[j]];var dataProductId=readProductId(dataValue);if(dataProductId)return dataProductId}}}return null}function isInlineMediaSlotElement(node){return !!(node&&node.getAttribute&&node.getAttribute("data-clippy-inline-media-slot")!==null)}function findInlineMediaSlot(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(isInlineMediaSlotElement(node))return node}return null}function readInlineMediaUrl(node){if(!node)return null;return node.getAttribute&&((node.getAttribute("data-clippy-inline-media-url")||node.getAttribute("data-url")||node.getAttribute("data_url")))||node.href||null}function stripHash(url){return String(url).replace(/#.*$/,"")}function urlsMatch(a,b){if(!a||!b)return false;try{return stripHash(new URL(a,loc).href)===stripHash(new URL(b,loc).href)}catch(_){return stripHash(a)===stripHash(b)}}function isFirstPartyReelUrl(value){try{var url=new URL(value,loc);if(url.protocol!=="https:")return false;var host=url.hostname.toLowerCase();var supported=host==="instagram.com"||host.endsWith(".instagram.com")||host==="facebook.com"||host.endsWith(".facebook.com");return supported&&/\/reels?\//i.test(url.pathname)}catch(_){return false}}function isInlineMediaUrlClick(node,href){var slot=findInlineMediaSlot(node);if(!slot)return false;var slotUrl=readInlineMediaUrl(slot);if(slotUrl)return urlsMatch(href,slotUrl);return isFirstPartyReelUrl(href)}function findDataHref(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(node.getAttribute){var href=node.getAttribute("data-href")||node.getAttribute("data-url");if(href)return{href:href,node:node}}}return null}var nativeOpen=window.open;window.open=function(url){if(parent!==window&&typeof url==="string"&&/^https?:\/\//.test(url)){parent.postMessage({type:"ecto:usercontent-link-click",href:url},"*");return null}return nativeOpen?nativeOpen.apply(window,arguments):null};document.addEventListener("click",function(e){var target=e.target instanceof Element?e.target:null;if(!target)return;if(parent===window)return;var a=target.closest?target.closest("a[href]"):null;if(a&&a.href&&/^https?:\/\//.test(a.href)&&a.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(a,a.href))return;var productId=extractProductId(target)||extractProductId(a);if(productId){e.preventDefault();parent.postMessage({type:"ecto-artifact-link-click",productId:productId},"*");return}e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:a.href},"*");return}var dataHref=findDataHref(target);if(dataHref&&/^https?:\/\//.test(dataHref.href)&&dataHref.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(dataHref.node,dataHref.href))return;e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:dataHref.href},"*")}},true)})();</script><script>(function(){var FOCUS_TYPE="ecto:artifact-focus-request";var CLOSE_TYPE="ecto:artifact-close-request";function focusArtifactDocument(){var body=document.body;if(!body)return;try{window.focus();}catch(e){}if(!body.hasAttribute("tabindex"))body.setAttribute("tabindex","-1");try{body.focus({preventScroll:true});}catch(e){try{body.focus();}catch(e2){}}}window.addEventListener("message",function(event){if(event.source!==window.parent)return;var data=event.data;if(!data||typeof data!=="object"||data.type!==FOCUS_TYPE)return;if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",focusArtifactDocument,{once:true});return;}focusArtifactDocument();});window.addEventListener("keydown",function(event){if(event.key!=="Escape")return;window.setTimeout(function(){if(event.defaultPrevented)return;window.parent.postMessage({type:CLOSE_TYPE},"*");},0);});})();</script></body>
 </html>
