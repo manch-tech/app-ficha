@@ -67,8 +67,8 @@ body{font-family:Inter,system-ui,sans-serif;background:#f9fafb}
           <label class="flex items-center gap-2 mt-2 text-xs cursor-pointer"><input type="checkbox" id="mesmoEndereco" class="h-4 w-4"> Mesmo endereco da obra</label>
         </div>
         <div><label class="text-[11px] font-bold uppercase">Tipo Servico</label><select id="tipo" class="w-full h-10 border rounded-xl px-3 bg-white"><option>Reforma</option><option>Construcao</option><option>Manutencao</option></select></div>
-        <div><label class="text-[11px] font-bold uppercase">Grupo Economico?</label><select id="grupo" class="w-full h-10 border rounded-xl px-3 bg-white"><option>Nao</option><option>Sim</option></select></div>
-        <div id="grupo-qual-wrap" class="hidden sm:col-span-2"><label class="text-[11px] font-bold uppercase">Qual grupo?</label><input id="grupoQual" class="w-full h-10 border rounded-xl px-3"></div>
+        <div><label class="text-[11px] font-bold uppercase">Tem relação direta ou indireta com o grupo citado ou empresa?</label><select id="grupo" class="w-full h-10 border rounded-xl px-3 bg-white"><option>Nao</option><option>Sim</option></select></div>
+        <div id="grupo-qual-wrap" class="hidden sm:col-span-2"><label class="text-[11px] font-bold uppercase">Qual grupo / empresa citada?</label><input id="grupoQual" class="w-full h-10 border rounded-xl px-3"></div>
         <div class="sm:col-span-2 mt-2 bg-amber-50 border border-amber-200 rounded-xl p-3 flex gap-2 text-xs"><input type="checkbox" id="decl"><label for="decl">Declaro para os devidos fins que as informações prestadas são verdadeiras e de minha inteira responsabilidade. Nao estou sendo influenciado por terceiros incluindo empresas do Grupo GPS. Ciente da política de conflito de interesses deste site e dos prestadores de serviços disponibilizados por essa plataforma. Autorizo tratamento dos dados para qualificação nos termos da LGPD.</label></div>
         <div id="erro-ficha" class="hidden sm:col-span-2 text-xs text-red-600 bg-red-50 border rounded-xl p-2"></div>
         <div class="sm:col-span-2"><button onclick="enviar()" class="w-full h-[46px] bg-[#ffbf00] rounded-xl font-bold">Gerar Ficha e Enviar</button></div>
@@ -181,7 +181,7 @@ function mostrarComprovante(f){
     <div class="col-span-2"><div class="text-[11px] uppercase text-zinc-400">Endereco da Obra</div>${f.endereco}</div>
     <div class="col-span-2"><div class="text-[11px] uppercase text-zinc-400">Endereco Recebimento</div>${f.enderecoRecebimento||f.endereco}</div>
     <div><div class="text-[11px] uppercase text-zinc-400">Tipo</div>${f.tipoServico}</div>
-    <div><div class="text-[11px] uppercase text-zinc-400">Grupo</div>${f.grupoEconomico} ${f.grupoQual||""}</div>
+    <div><div class="text-[11px] uppercase text-zinc-400">Relação Grupo / Empresa</div>${f.grupoEconomico}${f.grupoQual ? " - " + f.grupoQual : ""}</div>
   `;
   const docs=Store.getDocs();
   if(docs.length){
