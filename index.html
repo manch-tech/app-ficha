@@ -87,6 +87,7 @@ body{font-family:Inter,system-ui,sans-serif;background:#f9fafb}
       <div class="no-print mt-4 grid grid-cols-2 gap-3" id="area-botoes">
         <button id="btn-zap" onclick="enviarZap()" class="h-[46px] bg-[#25D366] text-white rounded-xl font-bold">Enviar via WhatsApp</button>
         <button id="btn-email" onclick="enviarEmail()" class="hidden h-[46px] bg-blue-600 text-white rounded-xl font-bold">Enviar por E-mail</button>
+        <button id="btn-finalizar" onclick="location.reload()" class="hidden h-[46px] bg-zinc-900 text-white rounded-xl font-bold">Finalizar - Protocolo Registrado</button>
         <button id="btn-print" onclick="window.print()" class="h-[46px] bg-zinc-900 text-white rounded-xl font-bold">Imprimir / Salvar PDF</button>
       </div>
       <div id="docs-area" class="no-print mt-6 border-t pt-4"></div>
@@ -190,21 +191,24 @@ function mostrarComprovante(f){
   const btnZap = document.getElementById("btn-zap");
   const btnEmail = document.getElementById("btn-email");
   const btnPrint = document.getElementById("btn-print");
+  const btnFinalizar = document.getElementById("btn-finalizar");
   if(temRelacao){
     areaDocs.innerHTML=`
       <div class="bg-red-50 border border-red-200 rounded-[16px] p-4">
         <h3 class="font-bold text-sm text-red-800">Análise de Conflito de Interesses - REPROVADO</h3>
         <p class="text-xs text-red-700 mt-2 leading-relaxed">Você informou que <b>tem relação direta ou indireta com o grupo citado ou empresa (GPS)</b>. Por política de conflito de interesses, os documentos das próximas fases <b>não serão disponibilizados</b> e a qualificação não poderá prosseguir por este canal.</p>
-        <p class="text-[11px] text-zinc-500 mt-2">Protocolo ${f.protocolo} registrado para análise. Envie por e-mail para registro.</p>
+        <p class="text-[11px] text-zinc-500 mt-2">Protocolo ${f.protocolo} já está salvo automaticamente em nosso sistema interno. Não é necessário enviar e-mail ou WhatsApp. Nossa equipe irá analisar.</p>
       </div>
     `;
-    // Bloqueia WhatsApp, libera apenas E-mail
+    // Reprovado: bloqueia WhatsApp e E-mail, mostra apenas Finalizar
     if(btnZap){ btnZap.classList.add("hidden"); btnZap.disabled = true; }
-    if(btnEmail){ btnEmail.classList.remove("hidden"); }
+    if(btnEmail){ btnEmail.classList.add("hidden"); }
     if(btnPrint){ btnPrint.classList.remove("hidden"); }
-  } else if(docs.length){ // APROVADO - libera WhatsApp, esconde Email
+    if(btnFinalizar){ btnFinalizar.classList.remove("hidden"); }
+  } else if(docs.length){ // APROVADO - libera WhatsApp, esconde Email e Finalizar
     if(btnZap){ btnZap.classList.remove("hidden"); btnZap.disabled = false; }
     if(btnEmail){ btnEmail.classList.add("hidden"); }
+    if(btnFinalizar){ btnFinalizar.classList.add("hidden"); }
     areaDocs.innerHTML=`
       <h3 class="font-bold text-sm">Proximas Fases - Documentos para Imprimir</h3>
       <p class="text-xs text-zinc-500 mt-1">Clique para abrir direto na impressora / salvar em PDF.</p>
@@ -219,6 +223,7 @@ function mostrarComprovante(f){
     areaDocs.innerHTML="";
     if(btnZap){ btnZap.classList.remove("hidden"); btnZap.disabled = false; }
     if(btnEmail){ btnEmail.classList.add("hidden"); }
+    if(btnFinalizar){ btnFinalizar.classList.add("hidden"); }
   }
   document.getElementById("tela-comp").classList.remove("hidden");
 }
@@ -240,9 +245,25 @@ Resultado: REPROVADO por conflito de interesses - declarou ter relacao direta ou
 
 Declaracao: Declaro para os devidos fins que as informacoes prestadas sao verdadeiras e de minha inteira responsabilidade. Nao estou sendo influenciado por terceiros incluindo empresas do Grupo GPS. Ciente da politica de conflito de interesses deste site e dos prestadores de servicos disponibilizados por essa plataforma. Autorizo tratamento dos dados para qualificacao nos termos da LGPD.
 `;
-  // Email de destino - use o mesmo do admin ou configure no Store
   const emailDestino = "contato@manoelpedra.com.br,manoel@manoelpedra.com.br"; // edite aqui
+  // Tenta abrir app de email
   window.location.href = `mailto:${emailDestino}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo)}`;
+  // Fallback: copia para área de transferência e avisa que já está registrado
+  setTimeout(()=>{
+    try{
+      navigator.clipboard.writeText(`Para: ${emailDestino}\nAssunto: ${assunto}\n\n${corpo}`);
+    }catch(e){}
+    const area = document.getElementById("docs-area");
+    if(area){
+      area.insertAdjacentHTML("beforeend", `
+        <div class="mt-3 bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs">
+          <b>Protocolo já registrado no sistema.</b><br>
+          Se o app de e-mail não abriu (normal em celular sem e-mail configurado), o texto foi copiado. Você pode colar no seu e-mail ou no WhatsApp do responsável.<br>
+          <span class="text-[11px] text-zinc-500">Destinatário: ${emailDestino}</span>
+        </div>
+      `);
+    }
+  }, 800);
 }
 function enviarZap(){
   const txt=`FICHA QUALIFICACAO - ${fichaAtual.razao} - CNPJ ${fichaAtual.cnpj} - Protocolo ${fichaAtual.protocolo} - Resp ${fichaAtual.responsavel} - Obra ${fichaAtual.endereco} - Receb ${fichaAtual.enderecoRecebimento}`;
