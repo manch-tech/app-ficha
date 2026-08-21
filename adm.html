@@ -176,10 +176,95 @@ function renderFichas(){
   let fichas=Store.getFichas();
   if(busca) fichas=fichas.filter(f=> (f.razao||"").toLowerCase().includes(busca) || (f.protocolo||"").toLowerCase().includes(busca) || (f.cnpj||"").includes(busca));
   document.getElementById("qtd-ficha").textContent=Store.getFichas().length;
-  document.getElementById("lista-ficha").innerHTML=fichas.map(f=>`<div class="border-b py-2"><b class="font-mono">${f.protocolo}</b> - ${f.razao} - ${f.cnpj} - ${f.responsavel} - ${f.whatsapp} - ${f.dataHora}<br>Obra: ${f.endereco||""} - Cobrança: ${f.enderecoCobranca||""}<br>Relação: ${f.temRelacao||"N/A"} ${f.qualEmpresa||""} - ${f.qualificado?"QUALIFICADO":"CONFLITO"}<br><button onclick="verFicha('${f.protocolo}')" class="text-blue-600 underline text-xs">Ver detalhes</button><button onclick="delFicha('${f.protocolo}')" class="text-red-600 underline text-xs ml-2">Excluir</button></div>`).join("")||"Nenhuma ficha";
+  document.getElementById("lista-ficha").innerHTML=fichas.map(f=>{
+    const revisao = f.revisaoFinal || (f.temRelacao==="SIM" ? "reprovado" : "pendente");
+    let statusLabel, statusColor, botoesRevisao;
+    if(f.temRelacao==="SIM"){
+      statusLabel="CONFLITO (rejeitado automaticamente)"; statusColor="text-red-600";
+      botoesRevisao="";
+    } else if(revisao==="qualificado"){
+      statusLabel="QUALIFICADO - Orçamento liberado"; statusColor="text-green-700";
+      botoesRevisao=`<button onclick="reprovarFicha('${f.protocolo}')" class="text-red-600 underline text-xs ml-2">Reprovar</button>`;
+    } else if(revisao==="reprovado"){
+      statusLabel="REPROVADO - Código desabilitado"; statusColor="text-red-600";
+      botoesRevisao=`<button onclick="reabrirFicha('${f.protocolo}')" class="text-blue-600 underline text-xs ml-2">Reabrir análise</button>`;
+    } else {
+      statusLabel="PENDENTE DE ANÁLISE"; statusColor="text-amber-600";
+      botoesRevisao=`<button onclick="qualificarFicha('${f.protocolo}')" class="text-green-700 underline text-xs ml-2">Qualificar (liberar orçamento)</button><button onclick="reprovarFicha('${f.protocolo}')" class="text-red-600 underline text-xs ml-2">Reprovar</button>`;
+    }
+    const docsExtras = f.docsExtras||[];
+    const docsExtrasHtml = docsExtras.map(d=>`<div class="flex justify-between items-center py-1 text-xs"><span>${d.titulo} - <a href="${d.url}" target="_blank" class="underline text-blue-600">abrir link</a></span><button onclick="delDocFicha('${f.protocolo}','${d.id}')" class="text-red-600 underline ml-2">excluir</button></div>`).join("") || `<div class="text-xs text-zinc-500">Nenhum documento exclusivo ainda</div>`;
+
+    return `<div class="border-b py-2">
+      <b class="font-mono">${f.protocolo}</b> - ${f.razao} - ${f.cnpj} - ${f.responsavel} - ${f.whatsapp} - ${f.dataHora}<br>
+      Obra: ${f.endereco||""} - Cobrança: ${f.enderecoCobranca||""}<br>
+      Relação: ${f.temRelacao||"N/A"} ${f.qualEmpresa||""} - Status: <b class="${statusColor}">${statusLabel}</b>${botoesRevisao}<br>
+      <button onclick="verFicha('${f.protocolo}')" class="text-blue-600 underline text-xs">Ver detalhes</button>
+      <button onclick="delFicha('${f.protocolo}')" class="text-red-600 underline text-xs ml-2">Excluir</button>
+      ${f.temRelacao!=="SIM" ? `
+      <div class="mt-2 bg-zinc-50 border rounded-xl p-2">
+        <div class="text-[11px] font-bold uppercase text-zinc-600">Documento exclusivo desta empresa (ex: Orçamento)</div>
+        ${docsExtrasHtml}
+        <div class="flex gap-1 mt-1">
+          <input id="docf-titulo-${f.protocolo}" placeholder="Título (ex: Orçamento)" class="border rounded-lg px-2 h-8 text-xs flex-1">
+          <input id="docf-url-${f.protocolo}" placeholder="URL do arquivo" class="border rounded-lg px-2 h-8 text-xs flex-1">
+          <button onclick="adicionarDocFicha('${f.protocolo}')" class="bg-zinc-900 text-white px-3 h-8 rounded-lg text-xs">Anexar</button>
+        </div>
+      </div>` : ""}
+    </div>`;
+  }).join("")||"Nenhuma ficha";
 }
 function verFicha(proto){ const f=Store.getFichas().find(x=>x.protocolo===proto); if(f) alert(JSON.stringify(f,null,2)); }
 async function delFicha(proto){ if(confirm("Excluir ficha "+proto+"?")){ await Store.deleteFicha(proto); renderFichas(); } }
+
+function qualificarFicha(proto){
+  const fichas = Store.getFichas().map(f=> f.protocolo===proto ? {...f, revisaoFinal:"qualificado"} : f);
+  Store.setFichas(fichas);
+  renderFichas();
+}
+function reprovarFicha(proto){
+  if(!confirm("Reprovar esta ficha? O código de acesso dela será desabilitado e ela não poderá mais consultar.")) return;
+  const fichas = Store.getFichas();
+  const f = fichas.find(x=>x.protocolo===proto);
+  if(!f) return;
+  Store.setFichas(fichas.map(x=> x.protocolo===proto ? {...x, revisaoFinal:"reprovado"} : x));
+  if(f.codigoUsado){
+    Store.setCodigos(Store.getCodigos().map(c=> c.codigo===f.codigoUsado ? {...c, status:"bloqueado"} : c));
+  }
+  renderFichas();
+}
+function reabrirFicha(proto){
+  const fichas = Store.getFichas();
+  const f = fichas.find(x=>x.protocolo===proto);
+  if(!f) return;
+  Store.setFichas(fichas.map(x=> x.protocolo===proto ? {...x, revisaoFinal:"pendente"} : x));
+  if(f.codigoUsado){
+    Store.setCodigos(Store.getCodigos().map(c=> c.codigo===f.codigoUsado ? {...c, status:"disponivel"} : c));
+  }
+  renderFichas();
+}
+function adicionarDocFicha(proto){
+  const tituloEl=document.getElementById(`docf-titulo-${proto}`);
+  const urlEl=document.getElementById(`docf-url-${proto}`);
+  const titulo=tituloEl.value.trim();
+  const url=urlEl.value.trim();
+  if(!titulo||!url){ alert("Preencha título e URL do documento"); return; }
+  const fichas = Store.getFichas().map(f=>{
+    if(f.protocolo!==proto) return f;
+    const docsExtras=[...(f.docsExtras||[]), {id:"docf-"+Date.now(), titulo, url}];
+    return {...f, docsExtras};
+  });
+  Store.setFichas(fichas);
+  renderFichas();
+}
+function delDocFicha(proto, docId){
+  const fichas = Store.getFichas().map(f=>{
+    if(f.protocolo!==proto) return f;
+    return {...f, docsExtras:(f.docsExtras||[]).filter(d=>d.id!==docId)};
+  });
+  Store.setFichas(fichas);
+  renderFichas();
+}
 
 function renderDocs(){
   const docs=Store.getDocs()||[];
