@@ -1,98 +1,123 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head><style>
-@font-face {
-  font-family: "Optimistic";
-  font-style: normal;
-  font-weight: 400 600;
-  font-display: swap;
-  src: url("/fonts/OptimisticAI_VF_Optimized.woff2") format("woff2");
-}
-@font-face {
-  font-family: "Optimistic Mono";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/fonts/OptimisticMono_W_TextRegular.woff2") format("woff2");
-}
-:where(html) {
-  font-family: "Optimistic", system-ui, sans-serif;
-}
-:where(code, pre, kbd, samp) {
-  font-family: "Optimistic Mono", ui-monospace, monospace;
-}
-</style>
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Admin - Manoel Pedra - Completo</title>
+<title>Admin - Manoel Pedra - ACVIT Final</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./shared.js"></script>
+<style>
+:root{color-scheme: light;}
+html,body{background:#f9fafb !important;color:#111827 !important;}
+label{color:#111827 !important;font-weight:700 !important;}
+input,select,textarea{background:#ffffff !important;color:#111827 !important;border:1.5px solid #a1a1aa !important;}
+@-moz-document url-prefix(){ label{color:#000 !important;} input{border:1.5px solid #71717a !important;} }
+</style>
+<script>
+// Fallback se shared.js falhar
+if(typeof Store === 'undefined'){
+  window.Store={
+    _docsCache:[{id:"termo-acvit-final",titulo:"Termo de Declaração - ACVIT",url:"https://manoelpedra.com.br/ficha/ficha/termo-de-declaracao-acvit.pdf",descricao:"Baixe"}],
+    _docsLoaded:true,
+    getCodigos:()=>{try{return JSON.parse(localStorage.getItem("manoel_codigos_v2")||"[]");}catch{return[];}},
+    setCodigos:(v)=>localStorage.setItem("manoel_codigos_v2",JSON.stringify(v)),
+    getFichas:()=>{try{return JSON.parse(localStorage.getItem("manoel_fichas_v2")||"[]");}catch{return[];}},
+    setFichas:(v)=>localStorage.setItem("manoel_fichas_v2",JSON.stringify(v)),
+    getDocs:function(){return this._docsCache;},
+    setDocs:function(v){this._docsCache=v;},
+    getWhats:()=>"5547992069588",
+    setWhats:()=>{},
+    syncFromSupabase:async()=>{},
+    deleteCodigo:(c)=>{const a=JSON.parse(localStorage.getItem("manoel_codigos_v2")||"[]").filter(x=>x.codigo!==c);localStorage.setItem("manoel_codigos_v2",JSON.stringify(a));return a;},
+    clearCodigos:async()=>{localStorage.setItem("manoel_codigos_v2","[]");},
+    deleteFicha:(p)=>{const a=JSON.parse(localStorage.getItem("manoel_fichas_v2")||"[]").filter(x=>x.protocolo!==p);localStorage.setItem("manoel_fichas_v2",JSON.stringify(a));return a;},
+    deleteDoc:async function(id){this._docsCache=this._docsCache.filter(x=>x.id!==id);return this._docsCache;}
+  };
+  window.gerarCodigo=()=>"MP-"+Math.floor(1000+Math.random()*9000);
+}
+</script>
 </head>
 <body class="bg-zinc-50 min-h-screen">
-
 <div id="tela-login" class="min-h-screen flex items-center justify-center bg-zinc-900 p-4">
   <div class="bg-white rounded-[20px] p-8 max-w-[360px] w-full shadow-2xl">
-    <h2 class="font-bold text-lg">Acesso Restrito - Admin</h2>
-    <p class="text-xs text-zinc-500 mt-1">Manoel Pedra - Digite email e senha</p>
+    <h2 class="font-bold text-lg text-black">Acesso Restrito - Admin</h2>
+    <p class="text-xs text-zinc-700 mt-1">Manoel Pedra - Digite email e senha</p>
     <input id="login-email" placeholder="Email" type="email" class="mt-4 w-full h-11 border rounded-xl px-4 text-sm">
-    <input id="login-senha" placeholder="Senha" type="password" class="mt-2 w-full h-11 border rounded-xl px-4 text-sm">
+    <input id="login-senha" placeholder="Senha" type="password" class="mt-2 w-full h-11 border rounded-xl px-4 text-sm" onkeydown="if(event.key==='Enter')fazerLogin()">
     <div id="login-erro" class="hidden mt-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl p-2"></div>
-    <button onclick="fazerLogin()" class="mt-3 w-full h-11 bg-zinc-900 text-white rounded-xl font-bold">Entrar</button>
-    <div class="mt-3 text-[11px] text-zinc-400 text-center">Altere email e senha no inicio do arquivo adm.html - linha ADMIN_EMAIL / ADMIN_SENHA</div>
+    <div id="login-recuperar-msg" class="hidden mt-2 text-xs text-green-700 bg-green-50 border border-green-100 rounded-xl p-2"></div>
+    <button id="login-btn" onclick="fazerLogin()" class="mt-3 w-full h-11 bg-zinc-900 text-white rounded-xl font-bold">Entrar</button>
+    <button id="esqueci-senha-btn" onclick="enviarResetSenha()" class="mt-3 w-full text-xs underline text-zinc-600">Esqueci minha senha</button>
+  </div>
+</div>
+<div id="tela-nova-senha" class="hidden min-h-screen flex items-center justify-center bg-zinc-900 p-4">
+  <div class="bg-white rounded-[20px] p-8 max-w-[360px] w-full shadow-2xl">
+    <h2 class="font-bold text-lg text-black">Definir Nova Senha</h2>
+    <p class="text-xs text-zinc-700 mt-1">Digite a nova senha de acesso</p>
+    <input id="nova-senha-1" placeholder="Nova senha" type="password" class="mt-4 w-full h-11 border rounded-xl px-4 text-sm">
+    <input id="nova-senha-2" placeholder="Confirme a nova senha" type="password" class="mt-2 w-full h-11 border rounded-xl px-4 text-sm" onkeydown="if(event.key==='Enter')salvarNovaSenha()">
+    <div id="nova-senha-erro" class="hidden mt-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl p-2"></div>
+    <div id="nova-senha-ok" class="hidden mt-2 text-xs text-green-700 bg-green-50 border border-green-100 rounded-xl p-2"></div>
+    <button id="nova-senha-btn" onclick="salvarNovaSenha()" class="mt-3 w-full h-11 bg-zinc-900 text-white rounded-xl font-bold">Salvar Senha</button>
   </div>
 </div>
 <div id="conteudo-admin" class="hidden">
-<header class="bg-white border-b p-4 flex justify-between sticky top-0"><b>Painel Administrativo - Manoel Pedra - Supabase ON - Completo</b><a href="./index.html" class="text-xs underline">Site cliente</a></header>
+<header class="bg-white border-b p-4 flex justify-between sticky top-0"><b class="text-black">Painel Administrativo - Manoel Pedra - ACVIT Final - Supabase ON</b><div><a href="./index.html" class="text-xs underline text-black">Site cliente</a></div></header>
 <main class="max-w-[1000px] mx-auto p-4">
   <div class="flex gap-2 mb-4 overflow-auto">
     <button onclick="mostrarAba('gerar')" id="btn-gerar" class="h-9 px-4 rounded-full bg-zinc-900 text-white text-xs font-bold">Gerar Codigo</button>
-    <button onclick="mostrarAba('lista')" id="btn-lista" class="h-9 px-4 rounded-full bg-white border text-xs">Codigos Gerados</button>
-    <button onclick="mostrarAba('arquivo')" id="btn-arquivo" class="h-9 px-4 rounded-full bg-white border text-xs">Arquivo Fichas</button>
-    <button onclick="mostrarAba('docs')" id="btn-docs" class="h-9 px-4 rounded-full bg-white border text-xs">Documentos Fases</button>
-    <button onclick="mostrarAba('config')" id="btn-config" class="h-9 px-4 rounded-full bg-white border text-xs">Configuracoes</button>
+    <button onclick="mostrarAba('lista')" id="btn-lista" class="h-9 px-4 rounded-full bg-white border text-xs text-black">Codigos Gerados</button>
+    <button onclick="mostrarAba('arquivo')" id="btn-arquivo" class="h-9 px-4 rounded-full bg-white border text-xs text-black">Arquivo Fichas</button>
+    <button onclick="mostrarAba('docs')" id="btn-docs" class="h-9 px-4 rounded-full bg-white border text-xs text-black">Documentos Fases</button>
+    <button onclick="mostrarAba('config')" id="btn-config" class="h-9 px-4 rounded-full bg-white border text-xs text-black">Configuracoes</button>
   </div>
 
   <div id="aba-gerar" class="bg-white border rounded-xl p-5">
-    <h3 class="font-bold">Gerar novo codigo de acesso</h3><p class="text-xs text-zinc-500 mt-1">Cada codigo unico e de uso unico. Salvo no Supabase.</p>
+    <h3 class="font-bold text-black">Gerar novo codigo de acesso</h3><p class="text-xs text-zinc-700 mt-1">Cada codigo unico e de uso unico. Salvo no Supabase.</p>
     <input id="empresa" placeholder="Empresa opcional Ex: CONSTRUTORA ALFA LTDA" class="mt-4 w-full h-10 border rounded-xl px-3">
-    <button onclick="gerar()" class="mt-3 h-10 px-5 bg-[#ffbf00] rounded-xl font-bold">Gerar MP-XXXX</button>
+    <button onclick="gerar()" class="mt-3 h-10 px-5 bg-[#ffbf00] rounded-xl font-bold text-black">Gerar MP-XXXX</button>
     <div id="gerado-box" class="hidden mt-4 bg-zinc-900 text-white p-4 rounded-xl">
       <div class="text-xs text-zinc-400">Codigo gerado</div>
       <div id="codigo-gerado" class="font-mono text-2xl font-bold"></div>
+      <div id="validade-info" class="text-xs text-zinc-300 mt-1"></div>
       <button onclick="copiarCodigo()" class="mt-2 bg-white text-black px-3 h-8 rounded-full text-xs">Copiar</button>
       <a id="zap-gerado" target="_blank" class="bg-[#25D366] text-white px-3 h-8 rounded-full text-xs inline-flex items-center">WhatsApp cliente</a>
     </div>
   </div>
 
   <div id="aba-lista" class="hidden bg-white border rounded-xl p-5">
-    <div class="flex justify-between"><h3 class="font-bold">Codigos Gerados (<span id="qtd-cod">0</span>) - Supabase</h3><button onclick="limparCodigos()" class="text-xs text-red-600">Limpar tudo</button></div>
-    <div id="lista-cod" class="mt-3 text-xs font-mono"></div>
+    <div class="flex justify-between"><h3 class="font-bold text-black">Codigos Gerados (<span id="qtd-cod">0</span>) - Supabase</h3><button onclick="limparCodigos()" class="text-xs text-red-600">Limpar tudo</button></div>
+    <div id="lista-cod" class="mt-3 text-xs font-mono text-black"></div>
   </div>
 
   <div id="aba-arquivo" class="hidden bg-white border rounded-xl p-5">
-    <h3 class="font-bold">Arquivo de Fichas (<span id="qtd-ficha">0</span>) - Supabase</h3>
+    <h3 class="font-bold text-black">Arquivo de Fichas (<span id="qtd-ficha">0</span>) - Supabase</h3>
     <input id="busca-ficha" placeholder="Buscar razao, protocolo, CNPJ" class="mt-3 w-full h-9 border rounded-full px-4 text-xs" oninput="renderFichas()">
-    <div id="lista-ficha" class="mt-3 text-xs max-h-[500px] overflow-auto"></div>
+    <div id="lista-ficha" class="mt-3 text-xs max-h-[500px] overflow-auto text-black"></div>
   </div>
 
   <div id="aba-docs" class="hidden bg-white border rounded-xl p-5">
-    <h3 class="font-bold">Documentos - Proximas Fases (cliente imprime)</h3>
-    <p class="text-xs text-zinc-500 mt-1">Esses documentos aparecem no comprovante para o cliente baixar e imprimir.</p>
+    <h3 class="font-bold text-black">Documentos - Proximas Fases (cliente imprime) - Com lápis de editar</h3>
+    <p class="text-xs text-zinc-700 mt-1">Esses documentos aparecem no comprovante para o cliente baixar e imprimir. Use o lápis para editar.</p>
     <div id="lista-docs" class="mt-4 space-y-2"></div>
     <div class="mt-4 border-t pt-4">
-      <h4 class="font-bold text-sm">Adicionar novo documento</h4>
-      <input id="doc-titulo" placeholder="Titulo Ex: Termo GPS" class="mt-2 w-full h-10 border rounded-xl px-3 text-sm">
-      <input id="doc-url" placeholder="URL Ex: ./ficha/termo.html ou https://..." class="mt-2 w-full h-10 border rounded-xl px-3 text-sm">
+      <h4 class="font-bold text-sm text-black" id="form-docs-titulo">Adicionar novo documento</h4>
+      <input type="hidden" id="doc-id-edit">
+      <input id="doc-titulo" placeholder="Titulo Ex: Termo de Declaração - ACVIT" class="mt-2 w-full h-10 border rounded-xl px-3 text-sm">
+      <input id="doc-url" placeholder="URL https://manoelpedra.com.br/ficha/ficha/termo-de-declaracao-acvit.pdf" class="mt-2 w-full h-10 border rounded-xl px-3 text-sm">
       <input id="doc-desc" placeholder="Descricao opcional" class="mt-2 w-full h-10 border rounded-xl px-3 text-sm">
-      <button onclick="addDoc()" class="mt-2 h-10 px-5 bg-zinc-900 text-white rounded-xl text-sm">Adicionar Documento</button>
+      <div class="flex gap-2">
+        <button onclick="addDoc()" id="btn-salvar-doc" class="mt-2 h-10 px-5 bg-zinc-900 text-white rounded-xl text-sm">Adicionar Documento</button>
+        <button onclick="cancelarEdicao()" id="btn-cancelar-doc" class="hidden mt-2 h-10 px-5 bg-white border rounded-xl text-sm text-black">Cancelar edição</button>
+      </div>
     </div>
   </div>
 
   <div id="aba-config" class="hidden bg-white border rounded-xl p-5">
-    <h3 class="font-bold">Configuracoes</h3>
-    <div class="mt-3"><label class="text-xs font-bold uppercase">WhatsApp de recebimento (somente numeros)</label><div class="flex gap-2 mt-1"><input id="whats-config" class="flex-1 h-10 border rounded-xl px-3 font-mono"><button onclick="salvarWhats()" class="h-10 px-4 border rounded-xl text-sm">Salvar</button></div></div>
-    <div class="mt-4 text-xs text-zinc-500">Supabase URL: https://pirpitolwdgzildiawdr.supabase.co - Sincronizando automatico</div>
+    <h3 class="font-bold text-black">Configuracoes</h3>
+    <div class="mt-3"><label class="text-xs font-bold uppercase text-black">WhatsApp de recebimento (somente numeros)</label><div class="flex gap-2 mt-1"><input id="whats-config" class="flex-1 h-10 border rounded-xl px-3 font-mono"><button onclick="salvarWhats()" class="h-10 px-4 border rounded-xl text-sm text-black">Salvar</button></div></div>
+    <div class="mt-4 text-xs text-zinc-700">Supabase URL: https://pirpitolwdgzildiawdr.supabase.co - Sincronizando automatico</div>
   </div>
 </main></div>
 <script>
@@ -105,23 +130,34 @@ function mostrarAba(nome){
   abaAtual=nome; if(nome==="lista") renderCodigos(); if(nome==="arquivo") renderFichas(); if(nome==="docs") renderDocs();
 }
 function gerar(){
-  const emp=document.getElementById("empresa").value.trim();
-  const codigo=gerarCodigo();
-  Store.setCodigos([{codigo, empresa:emp||"SEM EMPRESA", data:new Date().toISOString(), status:"disponivel"}, ...Store.getCodigos()]);
-  document.getElementById("codigo-gerado").textContent=codigo;
-  document.getElementById("gerado-box").classList.remove("hidden");
-  document.getElementById("zap-gerado").href=`https://wa.me/?text=${encodeURIComponent(`Ola, seu codigo para preencher a ficha de qualificacao e ${codigo} - Acesse https://manch-tech.github.io/app-ficha/`)}`;
-  document.getElementById("empresa").value="";
-  renderCodigos();
+  try{
+    const empresa=document.getElementById("empresa").value.trim();
+    const diasValidade = 3;
+    const agora = new Date();
+    const expira = new Date(); expira.setDate(agora.getDate() + diasValidade);
+    const codigo=gerarCodigo();
+    const novo={codigo, empresa, data:agora.toISOString(), expiraEm:expira.toISOString(), validadeDias:diasValidade, status:"disponivel"};
+    const lista=[novo, ...Store.getCodigos()];
+    Store.setCodigos(lista);
+    document.getElementById("codigo-gerado").textContent=codigo;
+    const info = document.getElementById("validade-info");
+    if(info) info.textContent = `Válido por ${diasValidade} dias até ${expira.toLocaleDateString("pt-BR")}`;
+    const baseUrl = location.origin + location.pathname.replace(/adm\.html|admin\.html/,"");
+    document.getElementById("zap-gerado").href=`https://wa.me/${Store.getWhats()}?text=${encodeURIComponent(`Seu codigo de acesso: ${codigo} - Valido por ${diasValidade} dias ate ${expira.toLocaleDateString("pt-BR")} - Acesse ${baseUrl}`)}`;
+    document.getElementById("gerado-box").classList.remove("hidden");
+    renderCodigos();
+  }catch(e){ alert("Erro ao gerar: "+(e.message||e)); }
 }
-function copiarCodigo(){ navigator.clipboard.writeText(document.getElementById("codigo-gerado").textContent); alert("Copiado"); }
+function copiarCodigo(){ const t=document.getElementById("codigo-gerado").textContent; if(navigator.clipboard){ navigator.clipboard.writeText(t).then(()=>alert("Copiado")).catch(()=>{ prompt("Copie o código:", t); }); } else { prompt("Copie o código:", t); } }
 function renderCodigos(){
   const codigos=Store.getCodigos();
   document.getElementById("qtd-cod").textContent=codigos.length;
   document.getElementById("lista-cod").innerHTML=codigos.map(c=>{
-    return `<div class="flex justify-between border-b py-2">
-      <span>${c.codigo} - ${c.empresa||""} - ${new Date(c.data).toLocaleString("pt-BR")} - ${c.status}</span>
-      <button onclick="delCod('${c.codigo}')" class="text-red-600">Excluir</button></div>`;
+    const expira = c.expiraEm ? new Date(c.expiraEm) : (c.data ? new Date(new Date(c.data).getTime()+3*24*60*60*1000) : null);
+    const expirado = expira && new Date() > expira && c.status==='disponivel';
+    const statusVisual = expirado ? 'EXPIRADO' : c.status;
+    const cor = expirado ? 'text-orange-600 font-bold' : (c.status==='usado' ? 'text-zinc-500' : 'text-green-600 font-bold');
+    return `<div class="flex justify-between border-b py-2"><span>${c.codigo} - ${c.empresa||""} - Criado: ${new Date(c.data).toLocaleDateString("pt-BR")} - Expira: ${expira?expira.toLocaleDateString("pt-BR"):"-"} - <span class="${cor}">${statusVisual}</span></span><button onclick="delCod('${c.codigo}')" class="text-red-600">Excluir</button></div>`;
   }).join("")||"Nenhum codigo - sincronizando Supabase...";
 }
 async function delCod(c){ if(confirm("Excluir "+c+"?")){ await Store.deleteCodigo(c); renderCodigos(); } }
@@ -131,15 +167,11 @@ function renderFichas(){
   let fichas=Store.getFichas();
   if(busca) fichas=fichas.filter(f=> (f.razao||"").toLowerCase().includes(busca) || (f.protocolo||"").toLowerCase().includes(busca) || (f.cnpj||"").includes(busca));
   document.getElementById("qtd-ficha").textContent=Store.getFichas().length;
-  document.getElementById("lista-ficha").innerHTML=fichas.map(f=>{
-    return `<div class="border-b py-2"><b class="font-mono">${f.protocolo}</b> - ${f.razao} - ${f.cnpj} - ${f.responsavel} - ${f.whatsapp} - ${f.dataHora}<br>
-      <button onclick="verFicha('${f.protocolo}')" class="text-blue-600 underline text-xs">Ver detalhes</button>
-      <button onclick="delFicha('${f.protocolo}')" class="text-red-600 underline text-xs ml-2">Excluir</button></div>`;
-  }).join("")||"Nenhuma ficha";
+  document.getElementById("lista-ficha").innerHTML=fichas.map(f=>`<div class="border-b py-2"><b class="font-mono">${f.protocolo}</b> - ${f.razao} - ${f.cnpj} - ${f.responsavel} - ${f.whatsapp} - ${f.dataHora}<br>Obra: ${f.endereco||""} - Cobrança: ${f.enderecoCobranca||""}<br>Relação: ${f.temRelacao||"N/A"} ${f.qualEmpresa||""} - ${f.qualificado?"QUALIFICADO":"CONFLITO"}<br><button onclick="verFicha('${f.protocolo}')" class="text-blue-600 underline text-xs">Ver detalhes</button><button onclick="delFicha('${f.protocolo}')" class="text-red-600 underline text-xs ml-2">Excluir</button></div>`).join("")||"Nenhuma ficha";
 }
 function verFicha(proto){ const f=Store.getFichas().find(x=>x.protocolo===proto); if(f) alert(JSON.stringify(f,null,2)); }
 async function delFicha(proto){ if(confirm("Excluir ficha "+proto+"?")){ await Store.deleteFicha(proto); renderFichas(); } }
-let docEditandoId = null;
+
 function renderDocs(){
   const docs=Store.getDocs()||[];
   if(!Store._docsLoaded){
@@ -148,39 +180,56 @@ function renderDocs(){
   }
   document.getElementById("lista-docs").innerHTML=docs.map(d=>{
     return `<div class="flex justify-between border rounded-xl p-3 items-center">
-      <div><b>${d.titulo}</b><div class="text-xs text-zinc-500">${d.descricao||""} - ${d.url}</div></div>
-      <div class="flex gap-2">
-        <button onclick="editDoc('${d.id}')" class="h-8 w-8 rounded-full border flex items-center justify-center text-xs" title="Editar">✏️</button>
-        <button onclick="delDoc('${d.id}')" class="text-red-600 text-xs px-2">Excluir</button>
+      <div><b class="text-black">${d.titulo}</b><div class="text-xs text-zinc-700">${d.descricao||""} - ${d.url}</div></div>
+      <div class="flex gap-1">
+        <button onclick="editarDoc('${d.id}')" class="bg-white border px-3 h-8 rounded-full text-xs text-black" title="Editar">✏️ Editar</button>
+        <button onclick="delDoc('${d.id}')" class="bg-red-50 border border-red-200 px-3 h-8 rounded-full text-xs text-red-600">Excluir</button>
       </div></div>`;
-  }).join("")||"<div class='text-xs text-zinc-500 p-3'>Nenhum documento</div>";
+  }).join("")||"<div class='text-xs text-zinc-700 p-3'>Nenhum documento - adicione abaixo</div>";
 }
-function editDoc(id){
-  const doc = Store.getDocs().find(x=>x.id===id);
-  if(!doc) return;
-  document.getElementById("doc-titulo").value = doc.titulo;
-  document.getElementById("doc-url").value = doc.url;
-  document.getElementById("doc-desc").value = doc.descricao||"";
-  docEditandoId = id;
-  document.querySelector("#aba-docs button[onclick='addDoc()']").textContent = "Salvar Edição";
-  document.getElementById("doc-titulo").focus();
+
+function editarDoc(id){
+  const docs=Store.getDocs();
+  const doc=docs.find(x=>x.id===id);
+  if(!doc){ alert("Documento não encontrado"); return; }
+  document.getElementById("doc-id-edit").value=doc.id;
+  document.getElementById("doc-titulo").value=doc.titulo;
+  document.getElementById("doc-url").value=doc.url;
+  document.getElementById("doc-desc").value=doc.descricao||"";
+  document.getElementById("form-docs-titulo").textContent="Editando documento: "+doc.titulo;
+  document.getElementById("btn-salvar-doc").textContent="Salvar edição";
+  document.getElementById("btn-cancelar-doc").classList.remove("hidden");
+  window.scrollTo(0, document.getElementById("form-docs-titulo").offsetTop);
+}
+
+function cancelarEdicao(){
+  document.getElementById("doc-id-edit").value="";
+  document.getElementById("doc-titulo").value="";
+  document.getElementById("doc-url").value="";
+  document.getElementById("doc-desc").value="";
+  document.getElementById("form-docs-titulo").textContent="Adicionar novo documento";
+  document.getElementById("btn-salvar-doc").textContent="Adicionar Documento";
+  document.getElementById("btn-cancelar-doc").classList.add("hidden");
 }
 
 function addDoc(){
+  const idEdit=document.getElementById("doc-id-edit").value.trim();
   const titulo=document.getElementById("doc-titulo").value.trim();
   const url=document.getElementById("doc-url").value.trim();
   const desc=document.getElementById("doc-desc").value.trim();
   if(!titulo||!url){ alert("Titulo e URL obrigatorios"); return; }
-  if(docEditandoId){
-    const docs = Store.getDocs().map(d=> d.id===docEditandoId ? {...d, titulo, url, descricao:desc} : d);
+  let docs=Store.getDocs();
+  if(idEdit){
+    // edição
+    docs=docs.map(d=> d.id===idEdit ? {...d, titulo, url, descricao:desc} : d);
     Store.setDocs(docs);
-    docEditandoId = null;
-    document.querySelector("#aba-docs button[onclick='addDoc()']").textContent = "Adicionar Documento";
+    alert("Documento editado!");
   } else {
     const doc={id:"doc-"+Date.now(), titulo, url, descricao:desc, obrigatorio:true};
-    Store.setDocs([...Store.getDocs(), doc]);
+    Store.setDocs([...docs, doc]);
+    alert("Documento adicionado!");
   }
-  document.getElementById("doc-titulo").value=""; document.getElementById("doc-url").value=""; document.getElementById("doc-desc").value="";
+  cancelarEdicao();
   renderDocs();
 }
 async function delDoc(id){ if(!confirm('Excluir este documento?')) return; await Store.deleteDoc(id); renderDocs(); }
@@ -190,49 +239,176 @@ setTimeout(()=>{ Store.syncFromSupabase().then(()=>{renderCodigos(); renderFicha
 renderCodigos(); renderFichas(); renderDocs();
 window.addEventListener("mp_sync", ()=>{renderCodigos(); renderFichas(); renderDocs();});
 </script>
-
 <script>
-// === CONFIGURE AQUI SEU EMAIL E SENHA ===
-const ADMIN_EMAIL = "manoel@manoelpedra.com.br";
-const ADMIN_SENHA = "Pedra@2024";
-// =========================================
-
-function fazerLogin(){
+async function fazerLogin(){
   const email = document.getElementById("login-email").value.trim().toLowerCase();
   const senha = document.getElementById("login-senha").value;
   const erro = document.getElementById("login-erro");
-  if(email===ADMIN_EMAIL.toLowerCase() && senha===ADMIN_SENHA){
-    localStorage.setItem("mp_admin_logado","1");
-    mostrarAdmin();
-  } else {
+  const btn = document.getElementById("login-btn");
+  erro.classList.add("hidden");
+
+  const sb = getSupabase();
+  if(!sb){
+    erro.textContent = "Não foi possível conectar ao Supabase. Verifique sua conexão.";
+    erro.classList.remove("hidden");
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Entrando...";
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: senha });
+
+  btn.disabled = false;
+  btn.textContent = "Entrar";
+
+  if(error || !data.session){
     erro.textContent = "Email ou senha incorretos";
     erro.classList.remove("hidden");
+    return;
   }
+
+  mostrarAdmin();
+}
+async function enviarResetSenha(){
+  const email = document.getElementById("login-email").value.trim().toLowerCase();
+  const erro = document.getElementById("login-erro");
+  const msg = document.getElementById("login-recuperar-msg");
+  const btn = document.getElementById("esqueci-senha-btn");
+  erro.classList.add("hidden");
+  msg.classList.add("hidden");
+
+  if(!email){
+    erro.textContent = "Digite seu email no campo acima primeiro";
+    erro.classList.remove("hidden");
+    return;
+  }
+
+  const sb = getSupabase();
+  if(!sb){
+    erro.textContent = "Não foi possível conectar ao Supabase.";
+    erro.classList.remove("hidden");
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Enviando...";
+
+  const redirectTo = window.location.origin + window.location.pathname;
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo });
+
+  btn.disabled = false;
+  btn.textContent = "Esqueci minha senha";
+
+  if(error){
+    erro.textContent = "Erro ao enviar: " + error.message;
+    erro.classList.remove("hidden");
+    return;
+  }
+
+  msg.textContent = "Email de recuperação enviado! Confira sua caixa de entrada.";
+  msg.classList.remove("hidden");
 }
 function mostrarAdmin(){
   document.getElementById("tela-login").classList.add("hidden");
+  document.getElementById("tela-nova-senha").classList.add("hidden");
   document.getElementById("conteudo-admin").classList.remove("hidden");
 }
-function fazerLogout(){
-  localStorage.removeItem("mp_admin_logado");
+async function fazerLogout(){
+  const sb = getSupabase();
+  if(sb) await sb.auth.signOut();
   location.reload();
 }
-// verifica se ja logado
-if(localStorage.getItem("mp_admin_logado")==="1"){
-  setTimeout(mostrarAdmin, 100);
+function ehLinkDeRecuperacao(){
+  return window.location.hash.includes("type=recovery");
 }
-// adiciona botao sair no header dinamicamente
+async function salvarNovaSenha(){
+  const s1 = document.getElementById("nova-senha-1").value;
+  const s2 = document.getElementById("nova-senha-2").value;
+  const erro = document.getElementById("nova-senha-erro");
+  const ok = document.getElementById("nova-senha-ok");
+  const btn = document.getElementById("nova-senha-btn");
+  erro.classList.add("hidden");
+  ok.classList.add("hidden");
+
+  if(!s1 || s1.length < 6){
+    erro.textContent = "A senha deve ter pelo menos 6 caracteres";
+    erro.classList.remove("hidden");
+    return;
+  }
+  if(s1 !== s2){
+    erro.textContent = "As senhas não coincidem";
+    erro.classList.remove("hidden");
+    return;
+  }
+
+  const sb = getSupabase();
+  if(!sb){
+    erro.textContent = "Não foi possível conectar ao Supabase.";
+    erro.classList.remove("hidden");
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Salvando...";
+
+  const { error } = await sb.auth.updateUser({ password: s1 });
+
+  btn.disabled = false;
+  btn.textContent = "Salvar Senha";
+
+  if(error){
+    erro.textContent = "Erro ao salvar senha: " + error.message;
+    erro.classList.remove("hidden");
+    return;
+  }
+
+  ok.textContent = "Senha atualizada com sucesso! Entrando...";
+  ok.classList.remove("hidden");
+  history.replaceState(null, "", window.location.pathname);
+  setTimeout(mostrarAdmin, 1200);
+}
+async function checarSessao(){
+  const sb = getSupabase();
+  if(!sb) return;
+
+  if(ehLinkDeRecuperacao()){
+    document.getElementById("tela-login").classList.add("hidden");
+    document.getElementById("tela-nova-senha").classList.remove("hidden");
+    return;
+  }
+
+  const { data } = await sb.auth.getSession();
+  if(data && data.session){
+    mostrarAdmin();
+  }
+}
+checarSessao();
 setTimeout(()=>{
   const header = document.querySelector("#conteudo-admin header");
   if(header){
+    const btnSenha = document.createElement("button");
+    btnSenha.textContent="Trocar Senha";
+    btnSenha.className="text-xs underline ml-3 text-black";
+    btnSenha.onclick=abrirTrocarSenha;
+    header.appendChild(btnSenha);
+
     const btn = document.createElement("button");
     btn.textContent="Sair";
-    btn.className="text-xs underline ml-3";
+    btn.className="text-xs underline ml-3 text-black";
     btn.onclick=fazerLogout;
     header.appendChild(btn);
   }
 }, 500);
+function abrirTrocarSenha(){
+  document.getElementById("conteudo-admin").classList.add("hidden");
+  document.getElementById("tela-login").classList.add("hidden");
+  document.getElementById("nova-senha-1").value = "";
+  document.getElementById("nova-senha-2").value = "";
+  document.getElementById("nova-senha-erro").classList.add("hidden");
+  document.getElementById("nova-senha-ok").classList.add("hidden");
+  document.getElementById("tela-nova-senha").classList.remove("hidden");
+}
 </script>
-
-<script>(function(){var loc=location.href.replace(/#.*$/,"");var ATTR_NAMES=["data-product-id","data-productid","data-product_id","product-id","productid","product_id","data-source-entity-id","source-entity-id","source_entity_id","data-product","data-metadata","data-meta"];var DATASET_KEYS=["productId","productid","product_id","sourceEntityId","sourceentityid","source_entity_id","product","metadata","meta"];function readProductId(value){if(typeof value!=="string"||value.length===0)return null;if(/^[0-9]{6,}$/.test(value))return value;var match=value.match(/(?:product(?:_|-)?id|source(?:_|-)?entity(?:_|-)?id)["'=:\s]+([0-9]{6,})/i);return match?match[1]:null}function extractProductId(start){for(var node=start;node&&node!==document.body;node=node.parentElement){for(var i=0;i<ATTR_NAMES.length;i++){var attrValue=node.getAttribute&&node.getAttribute(ATTR_NAMES[i]);var attrProductId=readProductId(attrValue);if(attrProductId)return attrProductId}var dataset=node.dataset||null;if(dataset){for(var j=0;j<DATASET_KEYS.length;j++){var dataValue=dataset[DATASET_KEYS[j]];var dataProductId=readProductId(dataValue);if(dataProductId)return dataProductId}}}return null}function isInlineMediaSlotElement(node){return !!(node&&node.getAttribute&&node.getAttribute("data-clippy-inline-media-slot")!==null)}function findInlineMediaSlot(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(isInlineMediaSlotElement(node))return node}return null}function readInlineMediaUrl(node){if(!node)return null;return node.getAttribute&&((node.getAttribute("data-clippy-inline-media-url")||node.getAttribute("data-url")||node.getAttribute("data_url")))||node.href||null}function stripHash(url){return String(url).replace(/#.*$/,"")}function urlsMatch(a,b){if(!a||!b)return false;try{return stripHash(new URL(a,loc).href)===stripHash(new URL(b,loc).href)}catch(_){return stripHash(a)===stripHash(b)}}function isFirstPartyReelUrl(value){try{var url=new URL(value,loc);if(url.protocol!=="https:")return false;var host=url.hostname.toLowerCase();var supported=host==="instagram.com"||host.endsWith(".instagram.com")||host==="facebook.com"||host.endsWith(".facebook.com");return supported&&/\/reels?\//i.test(url.pathname)}catch(_){return false}}function isInlineMediaUrlClick(node,href){var slot=findInlineMediaSlot(node);if(!slot)return false;var slotUrl=readInlineMediaUrl(slot);if(slotUrl)return urlsMatch(href,slotUrl);return isFirstPartyReelUrl(href)}function findDataHref(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(node.getAttribute){var href=node.getAttribute("data-href")||node.getAttribute("data-url");if(href)return{href:href,node:node}}}return null}var nativeOpen=window.open;window.open=function(url){if(parent!==window&&typeof url==="string"&&/^https?:\/\//.test(url)){parent.postMessage({type:"ecto:usercontent-link-click",href:url},"*");return null}return nativeOpen?nativeOpen.apply(window,arguments):null};document.addEventListener("click",function(e){var target=e.target instanceof Element?e.target:null;if(!target)return;if(parent===window)return;var a=target.closest?target.closest("a[href]"):null;if(a&&a.href&&/^https?:\/\//.test(a.href)&&a.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(a,a.href))return;var productId=extractProductId(target)||extractProductId(a);if(productId){e.preventDefault();parent.postMessage({type:"ecto-artifact-link-click",productId:productId},"*");return}e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:a.href},"*");return}var dataHref=findDataHref(target);if(dataHref&&/^https?:\/\//.test(dataHref.href)&&dataHref.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(dataHref.node,dataHref.href))return;e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:dataHref.href},"*")}},true)})();</script><script>(function(){var FOCUS_TYPE="ecto:artifact-focus-request";var CLOSE_TYPE="ecto:artifact-close-request";function focusArtifactDocument(){var body=document.body;if(!body)return;try{window.focus();}catch(e){}if(!body.hasAttribute("tabindex"))body.setAttribute("tabindex","-1");try{body.focus({preventScroll:true});}catch(e){try{body.focus();}catch(e2){}}}window.addEventListener("message",function(event){if(event.source!==window.parent)return;var data=event.data;if(!data||typeof data!=="object"||data.type!==FOCUS_TYPE)return;if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",focusArtifactDocument,{once:true});return;}focusArtifactDocument();});window.addEventListener("keydown",function(event){if(event.key!=="Escape")return;window.setTimeout(function(){if(event.defaultPrevented)return;window.parent.postMessage({type:CLOSE_TYPE},"*");},0);});})();</script></body>
+</body>
 </html>
